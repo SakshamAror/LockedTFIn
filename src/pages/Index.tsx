@@ -10,7 +10,8 @@ import { toast } from "sonner";
 import type { Email } from "@/components/EmailCard";
 
 export default function Index() {
-  const [emails, setEmails] = useState<Email[]>(mockEmails);
+  const [emails, setEmails] = useState<Email[]>([]);
+  const [hasFetched, setHasFetched] = useState(false);
   const [loading, setLoading] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -42,6 +43,7 @@ export default function Index() {
       } else {
         toast.info("No important emails found today.");
       }
+      setHasFetched(true);
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || "Failed to fetch emails.");
@@ -115,7 +117,17 @@ export default function Index() {
               {emails.length === 0 ? (
                 <div className="glass rounded-lg p-12 text-center">
                   <Mail className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-sm text-muted-foreground">No important emails today — you're all caught up!</p>
+                  <p className="text-sm text-muted-foreground">
+                    {hasFetched
+                      ? "No important emails today — you're all caught up!"
+                      : "Click \"Get Emails\" to fetch your important emails."}
+                  </p>
+                  {!hasFetched && (
+                    <Button onClick={handleGetEmails} disabled={loading} className="gap-2 mt-4">
+                      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                      {loading ? "Fetching…" : "Get Emails"}
+                    </Button>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-2">

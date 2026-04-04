@@ -170,8 +170,8 @@ export default function Index() {
               {/* Loading skeletons */}
               {loading && <EmailSkeleton count={5} />}
 
-              {/* Empty state */}
-              {!loading && emails.length === 0 && (
+              {/* Empty state — only show if no error */}
+              {!loading && emails.length === 0 && !error && (
                 <div className="glass rounded-lg p-12 text-center">
                   <Mail className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
                   <p className="text-sm text-muted-foreground">

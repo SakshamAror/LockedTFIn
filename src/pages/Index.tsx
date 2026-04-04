@@ -43,7 +43,8 @@ export default function Index() {
       } else {
         toast.info("No important emails found today.");
       }
-    setHasFetched(true);
+      setHasFetched(true);
+    } catch (err: any) {
       console.error(err);
       toast.error(err.message || "Failed to fetch emails.");
     } finally {

@@ -38,7 +38,7 @@ export function ImportanceFunnel({ emails }: { emails: { importance: string }[] 
 
   return (
     <div className="glass rounded-lg p-5 animate-fade-in">
-      <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-4">
+      <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-4 font-display">
         Importance Funnel · {total} emails
       </h3>
       <div className="space-y-2">

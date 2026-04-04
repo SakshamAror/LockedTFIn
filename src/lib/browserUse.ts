@@ -34,7 +34,7 @@ export async function fetchEmails(): Promise<Email[]> {
   const session: SessionResponse = await createRes.json();
   const sessionId = session.id;
 
-  const TIMEOUT_MS = 3 * 60 * 1000; // 3 minutes
+  const TIMEOUT_MS = 8 * 60 * 1000; // 8 minutes
   const POLL_INTERVAL = 5000;
   const start = Date.now();
 

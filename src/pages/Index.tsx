@@ -27,7 +27,7 @@ export default function Index() {
       <main className="flex-1 overflow-auto">
         <header className="flex items-center justify-between px-8 py-5 border-b border-border/50">
           <div>
-            <h1 className="text-xl font-semibold text-foreground">Good morning, Saksham</h1>
+            <h1 className="text-xl font-semibold text-foreground font-display">Good morning, Saksham</h1>
             <p className="text-xs text-muted-foreground mt-0.5">
               {today} · {mockEmails.length} important email{mockEmails.length !== 1 ? "s" : ""} today
             </p>
@@ -36,7 +36,7 @@ export default function Index() {
 
         <div className="p-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-foreground">Priority Inbox</h2>
+            <h2 className="text-sm font-semibold text-foreground font-display">Priority Inbox</h2>
             <span className="text-xs text-muted-foreground">Ranked by importance</span>
           </div>
           {mockEmails.length === 0 ? (

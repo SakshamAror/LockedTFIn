@@ -2,11 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Funnel+Display:wght@300;400;500;600;700&display=swap');
 
 @layer base {
   :root {
-    --background: 230 25% 95%;
+    --background: 260 20% 95%;
     --foreground: 230 25% 12%;
 
     --card: 0 0% 100% / 0.7;
@@ -15,7 +15,7 @@
     --popover: 0 0% 100% / 0.85;
     --popover-foreground: 230 25% 12%;
 
-    --primary: 245 58% 51%;
+    --primary: 265 55% 52%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 230 20% 92%;
@@ -24,7 +24,7 @@
     --muted: 230 15% 90%;
     --muted-foreground: 230 10% 45%;
 
-    --accent: 245 50% 55%;
+    --accent: 270 45% 58%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 55%;
@@ -38,22 +38,22 @@
 
     --border: 230 15% 85%;
     --input: 230 15% 85%;
-    --ring: 245 58% 51%;
+    --ring: 265 55% 52%;
 
     --radius: 0.75rem;
 
     --glass: 0 0% 100% / 0.55;
     --glass-border: 230 20% 80% / 0.5;
-    --glass-highlight: 245 60% 95% / 0.4;
+    --glass-highlight: 265 60% 95% / 0.4;
 
     --sidebar-background: 0 0% 100% / 0.5;
     --sidebar-foreground: 230 15% 40%;
-    --sidebar-primary: 245 58% 51%;
+    --sidebar-primary: 265 55% 52%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 245 40% 94%;
-    --sidebar-accent-foreground: 230 25% 12%;
-    --sidebar-border: 230 15% 88%;
-    --sidebar-ring: 245 58% 51%;
+    --sidebar-accent: 265 40% 94%;
+    --sidebar-accent-foreground: 260 25% 12%;
+    --sidebar-border: 260 15% 88%;
+    --sidebar-ring: 265 55% 52%;
   }
 }
 

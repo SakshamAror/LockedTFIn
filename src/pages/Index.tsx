@@ -86,21 +86,45 @@ export default function Index() {
         </header>
 
         <div className="p-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-foreground font-display">Priority Inbox</h2>
-            <span className="text-xs text-muted-foreground">Ranked by importance</span>
-          </div>
-          {emails.length === 0 ? (
-            <div className="glass rounded-lg p-12 text-center">
-              <Mail className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
-              <p className="text-sm text-muted-foreground">No important emails today — you're all caught up!</p>
+          {!isConnected ? (
+            <div className="glass rounded-xl p-10 text-center max-w-lg mx-auto mt-12">
+              <div className="h-14 w-14 rounded-2xl bg-primary/15 flex items-center justify-center mx-auto mb-4">
+                <Mail className="h-7 w-7 text-primary" />
+              </div>
+              <h2 className="text-lg font-semibold text-foreground font-display mb-2">Connect your email</h2>
+              <p className="text-sm text-muted-foreground mb-1">
+                To pull your important emails, you need to connect via{" "}
+                <a href="https://cloud.browser-use.com" target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                  Browser Use Cloud
+                </a>.
+              </p>
+              <p className="text-xs text-muted-foreground mb-6">
+                Enter your Gmail address and API key in Settings to get started.
+              </p>
+              <Button onClick={() => setSettingsOpen(true)} className="gap-2">
+                <Settings className="h-4 w-4" />
+                Open Settings
+              </Button>
             </div>
           ) : (
-            <div className="space-y-2">
-              {emails.map((email, i) => (
-                <EmailCard key={email.id} email={email} index={i} />
-              ))}
-            </div>
+            <>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-sm font-semibold text-foreground font-display">Priority Inbox</h2>
+                <span className="text-xs text-muted-foreground">Ranked by importance</span>
+              </div>
+              {emails.length === 0 ? (
+                <div className="glass rounded-lg p-12 text-center">
+                  <Mail className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-sm text-muted-foreground">No important emails today — you're all caught up!</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {emails.map((email, i) => (
+                    <EmailCard key={email.id} email={email} index={i} />
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
       </main>

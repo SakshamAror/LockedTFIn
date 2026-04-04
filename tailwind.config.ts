@@ -15,7 +15,7 @@ export default {
     extend: {
       fontFamily: {
         sans: ["Inter", "sans-serif"],
-        display: ["Funnel Display", "sans-serif"],
+        display: ["ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "monospace"],
       },
       colors: {
         border: "hsl(var(--border))",

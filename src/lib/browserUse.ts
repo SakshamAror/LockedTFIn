@@ -34,9 +34,12 @@ export async function fetchEmails(): Promise<Email[]> {
   const session: SessionResponse = await createRes.json();
   const sessionId = session.id;
 
-  const maxAttempts = 120;
-  for (let i = 0; i < maxAttempts; i++) {
-    await new Promise((r) => setTimeout(r, 5000));
+  const TIMEOUT_MS = 3 * 60 * 1000; // 3 minutes
+  const POLL_INTERVAL = 5000;
+  const start = Date.now();
+
+  while (Date.now() - start < TIMEOUT_MS) {
+    await new Promise((r) => setTimeout(r, POLL_INTERVAL));
 
     const pollRes = await fetch(`${BASE_URL}/sessions/${sessionId}`, {
       headers: { "X-Browser-Use-API-Key": apiKey },
@@ -53,11 +56,11 @@ export async function fetchEmails(): Promise<Email[]> {
     }
 
     if (result.status === "failed" || result.status === "error") {
-      throw new Error("Browser Use task failed");
+      throw new Error("Browser Use task failed. Please verify your API key and Gmail address in Settings.");
     }
   }
 
-  throw new Error("Task timed out");
+  throw new Error("Request timed out. Please check that your Gmail address and Browser Use API key are correct in Settings.");
 }
 
 function parseEmailOutput(output: string): Email[] {

@@ -89,11 +89,20 @@ function hasOutput(output: unknown): boolean {
 }
 
 function parseSessionOutput(output: unknown): Email[] {
+  let emails: Email[];
+
   if (typeof output === "string") {
-    return parseJsonOutput(output);
+    emails = parseJsonOutput(output);
+  } else {
+    emails = parseStructuredOutput(output);
   }
 
-  return parseStructuredOutput(output);
+  if (emails.length === 0 && hasOutput(output)) {
+    console.warn("Browser Use returned output but no emails could be parsed:", output);
+    throw new Error("Could not parse emails from the response. The format was unexpected — please try again.");
+  }
+
+  return emails;
 }
 
 function parseStructuredOutput(output: unknown): Email[] {

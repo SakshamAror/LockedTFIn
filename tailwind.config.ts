@@ -15,6 +15,7 @@ export default {
     extend: {
       fontFamily: {
         sans: ["Inter", "sans-serif"],
+        display: ["Funnel Display", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",

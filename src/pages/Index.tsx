@@ -27,7 +27,7 @@ export default function Index() {
       <main className="flex-1 overflow-auto">
         <header className="flex items-center justify-between px-8 py-5 border-b border-border/50">
           <div>
-            <h1 className="text-xl font-semibold text-foreground">Good morning, Saksham</h1>
+            <h1 className="text-xl font-semibold text-foreground font-display">Good morning, Saksham</h1>
             <p className="text-xs text-muted-foreground mt-0.5">
               {today} · {mockEmails.length} important email{mockEmails.length !== 1 ? "s" : ""} today
             </p>

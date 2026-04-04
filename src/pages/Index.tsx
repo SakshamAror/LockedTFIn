@@ -14,17 +14,19 @@ export default function Index() {
   const [loading, setLoading] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
+  const { apiKey, email } = getSettings();
+  const isConnected = !!(apiKey && email);
+
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
     month: "long",
     day: "numeric",
   });
 
-  const userName = getSettings().email?.split("@")[0] || "there";
+  const userName = email?.split("@")[0] || "there";
 
   const handleGetEmails = async () => {
-    const { apiKey, email } = getSettings();
-    if (!apiKey || !email) {
+    if (!isConnected) {
       toast.error("Please set your API key and email in Settings first.");
       setSettingsOpen(true);
       return;

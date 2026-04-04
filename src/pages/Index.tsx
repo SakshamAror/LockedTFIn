@@ -47,6 +47,8 @@ export default function Index() {
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || "Failed to fetch emails.");
+      setEmails([]);
+      setHasFetched(true);
     } finally {
       setLoading(false);
     }

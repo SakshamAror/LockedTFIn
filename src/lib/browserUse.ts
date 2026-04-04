@@ -204,7 +204,7 @@ function parseJsonOutput(output: string): Email[] {
       return parseStructuredOutput(JSON.parse(jsonMatch[0]));
     } catch (error) {
       console.error("Failed to parse Browser Use output:", error);
-      return [];
+      throw new Error("Failed to parse email data from Browser Use. The response format was unexpected.");
     }
   }
 }

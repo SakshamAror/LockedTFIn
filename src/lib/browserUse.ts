@@ -1,6 +1,6 @@
 import type { Email } from "@/components/EmailCard";
+import { getSettings } from "@/components/SettingsPanel";
 
-const API_KEY = "bu_bLa0EYdNgoFuRaTHpzcxsV7luda4HkEHuXtGLm2iJS4";
 const BASE_URL = "https://api.browser-use.com/api/v3";
 
 interface SessionResponse {
@@ -10,15 +10,20 @@ interface SessionResponse {
 }
 
 export async function fetchEmails(): Promise<Email[]> {
-  // 1. Create a session/task
+  const { apiKey, email } = getSettings();
+
+  if (!apiKey || !email) {
+    throw new Error("Please configure your API key and email in Settings first.");
+  }
+
   const createRes = await fetch(`${BASE_URL}/sessions`, {
     method: "POST",
     headers: {
-      "X-Browser-Use-API-Key": API_KEY,
+      "X-Browser-Use-API-Key": apiKey,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      task: `Pull out my 10 most important unread emails (at sakshamarora1202@gmail.com) (if any) from today and rank them by potential importance. Return ONLY a valid JSON array with objects having these fields: sender (string), subject (string), preview (first 1-2 sentences of the email body), time (string like "9:30 AM"), importance ("critical" | "high" | "medium"), category (string like "Security", "Work", "Finance", "Social", "Updates"). No markdown, no explanation, just the JSON array.`,
+      task: `Pull out my 10 most important unread emails (at ${email}) (if any) from today and rank them by potential importance. Return ONLY a valid JSON array with objects having these fields: sender (string), subject (string), preview (first 1-2 sentences of the email body), time (string like "9:30 AM"), importance ("critical" | "high" | "medium"), category (string like "Security", "Work", "Finance", "Social", "Updates"). No markdown, no explanation, just the JSON array.`,
     }),
   });
 
@@ -29,21 +34,19 @@ export async function fetchEmails(): Promise<Email[]> {
   const session: SessionResponse = await createRes.json();
   const sessionId = session.id;
 
-  // 2. Poll for completion
-  let result: SessionResponse;
-  const maxAttempts = 120; // 10 minutes max
+  const maxAttempts = 120;
   for (let i = 0; i < maxAttempts; i++) {
     await new Promise((r) => setTimeout(r, 5000));
 
     const pollRes = await fetch(`${BASE_URL}/sessions/${sessionId}`, {
-      headers: { "X-Browser-Use-API-Key": API_KEY },
+      headers: { "X-Browser-Use-API-Key": apiKey },
     });
 
     if (!pollRes.ok) {
       throw new Error(`Failed to poll session: ${pollRes.status}`);
     }
 
-    result = await pollRes.json();
+    const result: SessionResponse = await pollRes.json();
 
     if (result.status === "finished" || result.status === "completed" || result.status === "done") {
       return parseEmailOutput(result.output || "");
@@ -59,12 +62,8 @@ export async function fetchEmails(): Promise<Email[]> {
 
 function parseEmailOutput(output: string): Email[] {
   try {
-    // Try to extract JSON array from the output
     const jsonMatch = output.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) {
-      console.warn("No JSON array found in output:", output);
-      return [];
-    }
+    if (!jsonMatch) return [];
 
     const parsed = JSON.parse(jsonMatch[0]);
 

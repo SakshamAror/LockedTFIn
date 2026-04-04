@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Mail, Inbox, RefreshCw, Loader2 } from "lucide-react";
+import { Mail, Inbox, RefreshCw, Loader2, Settings } from "lucide-react";
 import { EmailCard } from "@/components/EmailCard";
 import { ImportanceFunnel } from "@/components/ImportanceFunnel";
+import { SettingsPanel, getSettings } from "@/components/SettingsPanel";
 import { mockEmails } from "@/data/mockEmails";
 import { fetchEmails } from "@/lib/browserUse";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import type { Email } from "@/components/EmailCard";
 export default function Index() {
   const [emails, setEmails] = useState<Email[]>(mockEmails);
   const [loading, setLoading] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
@@ -18,7 +20,16 @@ export default function Index() {
     day: "numeric",
   });
 
+  const userName = getSettings().email?.split("@")[0] || "there";
+
   const handleGetEmails = async () => {
+    const { apiKey, email } = getSettings();
+    if (!apiKey || !email) {
+      toast.error("Please set your API key and email in Settings first.");
+      setSettingsOpen(true);
+      return;
+    }
+
     setLoading(true);
     toast.info("Fetching your emails… this may take a few minutes.");
     try {
@@ -29,9 +40,9 @@ export default function Index() {
       } else {
         toast.info("No important emails found today.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      toast.error("Failed to fetch emails. Please try again.");
+      toast.error(err.message || "Failed to fetch emails.");
     } finally {
       setLoading(false);
     }
@@ -49,26 +60,25 @@ export default function Index() {
         <div className="flex-1">
           <ImportanceFunnel emails={emails} />
         </div>
+        <button
+          onClick={() => setSettingsOpen(true)}
+          className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors mt-4 border-t border-border/50 pt-4"
+        >
+          <Settings className="h-4 w-4" />
+          <span>Settings</span>
+        </button>
       </aside>
 
       <main className="flex-1 overflow-auto">
         <header className="flex items-center justify-between px-8 py-5 border-b border-border/50">
           <div>
-            <h1 className="text-xl font-semibold text-foreground font-display">Good morning, Saksham</h1>
+            <h1 className="text-xl font-semibold text-foreground font-display">Good morning, {userName}</h1>
             <p className="text-xs text-muted-foreground mt-0.5">
               {today} · {emails.length} important email{emails.length !== 1 ? "s" : ""} today
             </p>
           </div>
-          <Button
-            onClick={handleGetEmails}
-            disabled={loading}
-            className="gap-2"
-          >
-            {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCw className="h-4 w-4" />
-            )}
+          <Button onClick={handleGetEmails} disabled={loading} className="gap-2">
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             {loading ? "Fetching…" : "Get Emails"}
           </Button>
         </header>
@@ -92,6 +102,8 @@ export default function Index() {
           )}
         </div>
       </main>
+
+      <SettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </div>
   );
 }

@@ -22,7 +22,7 @@ interface GmailMessage {
   labelIds?: string[];
 }
 
-export async function fetchEmails(): Promise<Email[]> {
+export async function fetchEmails(signal?: AbortSignal): Promise<Email[]> {
   const { apiKey, email } = getSettings();
 
   if (!apiKey || !email) {
@@ -38,28 +38,38 @@ export async function fetchEmails(): Promise<Email[]> {
     body: JSON.stringify({
       task: `Pull out my 10 most important unread emails (at ${email}) (if any) from today and rank them by potential importance. Return ONLY a valid JSON array with objects having these fields: sender (string), subject (string), preview (first 1-2 sentences of the email body), time (string like "9:30 AM"), importance ("critical" | "high" | "medium"), category (string like "Security", "Work", "Finance", "Social", "Updates"). No markdown, no explanation, just the JSON array.`,
     }),
+    signal,
   });
 
   if (!createRes.ok) {
-    throw new Error(`Failed to create session: ${createRes.status}`);
+    const status = createRes.status;
+    if (status === 401 || status === 403) {
+      throw new Error("Invalid API key. Please check your Browser Use API key in Settings.");
+    }
+    if (status === 429) {
+      throw new Error("Rate limited by Browser Use. Please wait a moment and try again.");
+    }
+    throw new Error(`Failed to create session (HTTP ${status}). Please try again.`);
   }
 
   const session: BrowserUseSession = await createRes.json();
   if (!session.id) {
-    throw new Error("Browser Use did not return a session ID.");
+    throw new Error("Browser Use did not return a session ID. The service may be temporarily unavailable.");
   }
 
   const start = Date.now();
 
   while (Date.now() - start < TIMEOUT_MS) {
+    signal?.throwIfAborted();
     await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL));
 
     const pollRes = await fetch(`${BASE_URL}/sessions/${session.id}`, {
       headers: { "X-Browser-Use-API-Key": apiKey },
+      signal,
     });
 
     if (!pollRes.ok) {
-      throw new Error(`Failed to poll session: ${pollRes.status}`);
+      throw new Error(`Failed to check session status (HTTP ${pollRes.status}). Please try again.`);
     }
 
     const result: BrowserUseSession = await pollRes.json();
@@ -81,7 +91,7 @@ export async function fetchEmails(): Promise<Email[]> {
     }
   }
 
-  throw new Error("Request timed out. Please check that your Gmail address and Browser Use API key are correct in Settings.");
+  throw new Error("Request timed out after 8 minutes. Please check that your Gmail address and Browser Use API key are correct in Settings.");
 }
 
 function hasOutput(output: unknown): boolean {
@@ -91,10 +101,14 @@ function hasOutput(output: unknown): boolean {
 function parseSessionOutput(output: unknown): Email[] {
   let emails: Email[];
 
-  if (typeof output === "string") {
-    emails = parseJsonOutput(output);
-  } else {
-    emails = parseStructuredOutput(output);
+  try {
+    if (typeof output === "string") {
+      emails = parseJsonOutput(output);
+    } else {
+      emails = parseStructuredOutput(output);
+    }
+  } catch (err: any) {
+    throw new Error(err.message || "Could not parse the email data. The response format was unexpected — please try again.");
   }
 
   if (emails.length === 0 && hasOutput(output)) {
@@ -200,11 +214,14 @@ function parseJsonOutput(output: string): Email[] {
   } catch {
     try {
       const jsonMatch = trimmedOutput.match(/\[[\s\S]*\]/);
-      if (!jsonMatch) return [];
+      if (!jsonMatch) {
+        throw new Error("No email data found in the response. Browser Use may not have been able to access your inbox.");
+      }
       return parseStructuredOutput(JSON.parse(jsonMatch[0]));
-    } catch (error) {
+    } catch (error: any) {
+      if (error.message.includes("No email data")) throw error;
       console.error("Failed to parse Browser Use output:", error);
-      throw new Error("Failed to parse email data from Browser Use. The response format was unexpected.");
+      throw new Error("Failed to parse email data from Browser Use. The response format was unexpected — please try again.");
     }
   }
 }

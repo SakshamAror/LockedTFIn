@@ -10,7 +10,8 @@ import { toast } from "sonner";
 import type { Email } from "@/components/EmailCard";
 
 export default function Index() {
-  const [emails, setEmails] = useState<Email[]>(mockEmails);
+  const [emails, setEmails] = useState<Email[]>([]);
+  const [hasFetched, setHasFetched] = useState(false);
   const [loading, setLoading] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
 

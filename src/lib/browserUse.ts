@@ -2,6 +2,25 @@ import type { Email } from "@/components/EmailCard";
 import { getSettings } from "@/components/SettingsPanel";
 
 const BASE_URL = "https://api.browser-use.com/api/v3";
+const TIMEOUT_MS = 8 * 60 * 1000;
+const POLL_INTERVAL = 5000;
+
+interface BrowserUseSession {
+  id: string;
+  status?: "created" | "idle" | "running" | "stopped" | "timed_out" | "error" | string;
+  output?: unknown;
+  isTaskSuccessful?: boolean | null;
+  lastStepSummary?: string | null;
+}
+
+interface GmailMessage {
+  sender: string;
+  subject: string;
+  preview?: { body?: string; subject?: string };
+  messageText?: string;
+  messageTimestamp?: string;
+  labelIds?: string[];
+}
 
 export async function fetchEmails(): Promise<Email[]> {
   const { apiKey, email } = getSettings();
@@ -25,17 +44,17 @@ export async function fetchEmails(): Promise<Email[]> {
     throw new Error(`Failed to create session: ${createRes.status}`);
   }
 
-  const session = await createRes.json();
-  const sessionId = session.id;
+  const session: BrowserUseSession = await createRes.json();
+  if (!session.id) {
+    throw new Error("Browser Use did not return a session ID.");
+  }
 
-  const TIMEOUT_MS = 8 * 60 * 1000; // 8 minutes
-  const POLL_INTERVAL = 5000;
   const start = Date.now();
 
   while (Date.now() - start < TIMEOUT_MS) {
-    await new Promise((r) => setTimeout(r, POLL_INTERVAL));
+    await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL));
 
-    const pollRes = await fetch(`${BASE_URL}/sessions/${sessionId}`, {
+    const pollRes = await fetch(`${BASE_URL}/sessions/${session.id}`, {
       headers: { "X-Browser-Use-API-Key": apiKey },
     });
 
@@ -43,49 +62,84 @@ export async function fetchEmails(): Promise<Email[]> {
       throw new Error(`Failed to poll session: ${pollRes.status}`);
     }
 
-    const result = await pollRes.json();
-    console.log("Poll result:", JSON.stringify(result).slice(0, 300));
+    const result: BrowserUseSession = await pollRes.json();
 
-    // Handle direct success response (no status field)
-    if (result.success && result.data?.response?.successful) {
-      const messages = result.data.response.data?.messages || [];
-      return parseMessages(messages);
+    if (result.status === "timed_out") {
+      throw new Error("Browser Use timed out. Please check that your Gmail address and Browser Use API key are correct in Settings.");
     }
 
-    // Handle status-based responses
-    const status = result.status || result.data?.status;
-
-    if (status === "finished" || status === "completed" || status === "done") {
-      // Try to extract from output string
-      if (result.output) {
-        return parseJsonOutput(result.output);
-      }
-      // Try nested data
-      const messages = result.data?.response?.data?.messages || [];
-      return parseMessages(messages);
+    if (result.status === "error" || result.isTaskSuccessful === false) {
+      throw new Error(result.lastStepSummary || "Browser Use could not complete the email fetch. Please verify your Gmail address and API key in Settings.");
     }
 
-    if (status === "failed" || status === "error") {
-      throw new Error("Browser Use task failed. Please verify your API key and Gmail address in Settings.");
+    if (hasOutput(result.output)) {
+      return parseSessionOutput(result.output);
     }
 
-    // If success is explicitly false, it failed
-    if (result.success === false) {
-      throw new Error("Browser Use task failed: " + (result.error || result.message || "Unknown error"));
+    if (result.status === "stopped") {
+      return [];
     }
   }
 
   throw new Error("Request timed out. Please check that your Gmail address and Browser Use API key are correct in Settings.");
 }
 
-interface GmailMessage {
-  sender: string;
-  subject: string;
-  preview?: { body?: string; subject?: string };
-  messageText?: string;
-  messageTimestamp?: string;
-  labelIds?: string[];
-  to?: string;
+function hasOutput(output: unknown): boolean {
+  return output !== null && output !== undefined && !(typeof output === "string" && output.trim() === "");
+}
+
+function parseSessionOutput(output: unknown): Email[] {
+  if (typeof output === "string") {
+    return parseJsonOutput(output);
+  }
+
+  return parseStructuredOutput(output);
+}
+
+function parseStructuredOutput(output: unknown): Email[] {
+  if (Array.isArray(output)) {
+    return parseAgentEmailArray(output);
+  }
+
+  if (!isRecord(output)) {
+    return [];
+  }
+
+  const directMessages = output.messages;
+  if (Array.isArray(directMessages)) {
+    return parseMessages(directMessages as GmailMessage[]);
+  }
+
+  const nestedMessages = output.data?.response?.data?.messages;
+  if (Array.isArray(nestedMessages)) {
+    return parseMessages(nestedMessages as GmailMessage[]);
+  }
+
+  const nestedData = output.data;
+  if (Array.isArray(nestedData)) {
+    return parseAgentEmailArray(nestedData);
+  }
+
+  return [];
+}
+
+function parseAgentEmailArray(items: unknown[]): Email[] {
+  return items.flatMap((item, index) => {
+    if (!isRecord(item)) {
+      return [];
+    }
+
+    return [{
+      id: index + 1,
+      sender: toStringValue(item.sender, "Unknown"),
+      subject: toStringValue(item.subject, "No subject"),
+      preview: toStringValue(item.preview),
+      time: toStringValue(item.time),
+      importance: normalizeImportance(item.importance),
+      unread: true,
+      category: toStringValue(item.category, "General"),
+    }];
+  });
 }
 
 function parseMessages(messages: GmailMessage[]): Email[] {
@@ -105,8 +159,6 @@ function parseMessages(messages: GmailMessage[]): Email[] {
       ? new Date(msg.messageTimestamp).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
       : "";
 
-    const category = inferCategory(msg.labelIds || [], msg.subject || "");
-
     return {
       id: index + 1,
       sender: msg.sender || "Unknown",
@@ -115,7 +167,7 @@ function parseMessages(messages: GmailMessage[]): Email[] {
       time,
       importance,
       unread: msg.labelIds?.includes("UNREAD") ?? true,
-      category,
+      category: inferCategory(msg.labelIds || [], msg.subject || ""),
     };
   });
 }
@@ -132,26 +184,30 @@ function inferCategory(labelIds: string[], subject: string): string {
 }
 
 function parseJsonOutput(output: string): Email[] {
+  const trimmedOutput = output.trim();
+
   try {
-    const jsonMatch = output.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) return [];
-
-    const parsed = JSON.parse(jsonMatch[0]);
-
-    return parsed.map((item: Record<string, string>, index: number) => ({
-      id: index + 1,
-      sender: item.sender || "Unknown",
-      subject: item.subject || "No subject",
-      preview: item.preview || "",
-      time: item.time || "",
-      importance: (["critical", "high", "medium"].includes(item.importance)
-        ? item.importance
-        : "medium") as Email["importance"],
-      unread: true,
-      category: item.category || "General",
-    }));
-  } catch (e) {
-    console.error("Failed to parse email output:", e, output);
-    return [];
+    return parseStructuredOutput(JSON.parse(trimmedOutput));
+  } catch {
+    try {
+      const jsonMatch = trimmedOutput.match(/\[[\s\S]*\]/);
+      if (!jsonMatch) return [];
+      return parseStructuredOutput(JSON.parse(jsonMatch[0]));
+    } catch (error) {
+      console.error("Failed to parse Browser Use output:", error);
+      return [];
+    }
   }
+}
+
+function normalizeImportance(value: unknown): Email["importance"] {
+  return value === "critical" || value === "high" || value === "medium" ? value : "medium";
+}
+
+function toStringValue(value: unknown, fallback = ""): string {
+  return typeof value === "string" ? value : fallback;
+}
+
+function isRecord(value: unknown): value is Record<string, any> {
+  return typeof value === "object" && value !== null;
 }

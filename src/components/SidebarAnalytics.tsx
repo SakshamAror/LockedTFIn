@@ -36,7 +36,7 @@ export function SidebarAnalytics({ events, assignments, lastUpdated }: SidebarAn
         {nextEvent ? (
           <div>
             <p className="text-xs font-mono font-medium text-foreground truncate">{nextEvent.summary}</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">
+            <p className="text-[10px] font-mono text-muted-foreground mt-0.5">
               {nextEvent.date} · {nextEvent.time}
             </p>
           </div>

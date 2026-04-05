@@ -44,7 +44,7 @@ Fill username: "${canvasUsername}"
 Fill password: "${canvasPassword}"
 Click the login/submit button.
 
-## STEP 2 — Duo 2FA + Device Trust (handle as one continuous phase)
+## STEP 2 — Duo 2FA + Device Trust (handle as one continuous phase, don't end the session or wait for next user input)
 After login you will be redirected to a Duo Security page at duosecurity.com.
 A push notification is automatically sent to the user's phone. DO NOT interact with the Duo page at all — do not click anything on it.
 

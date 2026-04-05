@@ -161,7 +161,6 @@ export function CanvasAssignments({ onOpenSettings }: { onOpenSettings: () => vo
               rel="noopener noreferrer"
               className={`flex items-start gap-3 rounded-lg p-2.5 hover:bg-muted/40 transition-colors group border border-border/30 ${i % 2 === 1 ? 'bg-muted/25' : 'bg-muted/5'}`}
             >
-            >
               <div className="h-9 w-9 rounded-lg bg-warning/10 flex items-center justify-center shrink-0">
                 <BookOpen className="h-4 w-4 text-warning" />
               </div>

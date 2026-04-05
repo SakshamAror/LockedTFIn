@@ -4,15 +4,15 @@ const BASE_URL = "https://api.browser-use.com/api/v3";
 const TIMEOUT_MS = 10 * 60 * 1000; // 10 min (SSO + Duo can be slow)
 const POLL_INTERVAL = 5000;
 const DUO_DEVICE_PROMPT_INSTRUCTIONS = [
-  "- After submitting SSO credentials, a Duo 2FA page will appear. Wait on that page — the user will approve the Duo push on their phone. Poll the page every second for up to 180 seconds until the push is approved.",
-  "- Do NOT stop the session or ask for user input during Duo approval.",
-  "",
+  '- After submitting SSO credentials, a Duo 2FA page will appear. Wait on that page — the user will approve the Duo push on their phone. Poll the page every second for up to 180 seconds until the push is approved.',
+  '- Do NOT stop the session or ask for user input during Duo approval.',
+  '',
   '=== CRITICAL: "Is this your device?" PAGE ===',
   '- After Duo approval, a page titled "Is this your device?" (or similar) will appear with a large primary button "Yes, this is my device".',
   '- You MUST ALWAYS click the smaller secondary link "No, other people use this device" — NEVER the primary "Yes" button.',
-  "- This link may appear as a plain hyperlink (not a button) and may be inside an iframe.",
+  '- This link may appear as a plain hyperlink (not a button) and may be inside an iframe.',
   '- IMMEDIATELY upon seeing this page: scan the main document and ALL iframes for an element whose text contains "other people use this device" and click it.',
-  "- If the click does not register on the first attempt, scroll the element into view and retry up to 5 times.",
+  '- If the click does not register on the first attempt, scroll the element into view and retry up to 5 times.',
   '- Do NOT proceed past this page by any other means. Clicking "Yes, this is my device" is forbidden.',
   '- After clicking "No, other people use this device", continue the login flow until Canvas is fully loaded.',
 ].join("\n");
@@ -51,32 +51,32 @@ export async function fetchCanvasAssignments(signal?: AbortSignal): Promise<Canv
 
   const task = `
 Go to https://canvas.ucsd.edu and log in using UCSD SSO.
-- On the SSO login page, enter username: "${canvasUsername}" and password: "${canvasPassword}"
-- Click the login/submit button
+•⁠  ⁠On the SSO login page, enter username: "${canvasUsername}" and password: "${canvasPassword}"
+•⁠  ⁠Click the login/submit button
 ${DUO_DEVICE_PROMPT_INSTRUCTIONS}
-- Once logged into Canvas, use the browser to call this API endpoint: https://canvas.ucsd.edu/api/v1/planner/items?start_date=2026-01-01&end_date=2026-12-31&per_page=200
-- Also call: https://canvas.ucsd.edu/api/v1/courses?enrollment_state=active&per_page=50&include[]=teachers&include[]=term
+•⁠  ⁠Once logged into Canvas, use the browser to call this API endpoint: https://canvas.ucsd.edu/api/v1/planner/items?start_date=2026-01-01&end_date=2026-12-31&per_page=200
+•⁠  ⁠Also call: https://canvas.ucsd.edu/api/v1/courses?enrollment_state=active&per_page=50&include[]=teachers&include[]=term
 
 From the planner items, filter only items where plannable_type is "assignment", "quiz", or "discussion_topic".
 Get all planner items withing 7 days from today and return them.
 
 Return ONLY a valid JSON array with objects having these fields:
-- title (string)
-- type (string: "assignment", "quiz", or "discussion_topic")
-- course (string: the course name)
-- professor (string: the teacher/professor name, "N/A" if unknown)
-- due_date (string like "Mon, Apr 7 2026 at 11:59 PM UTC", or "N/A")
-- points (string or number, "N/A" if not applicable)
-- submitted (boolean)
-- graded (boolean)
-- url (string: full Canvas URL to the item)
+•⁠  ⁠title (string)
+•⁠  ⁠type (string: "assignment", "quiz", or "discussion_topic")
+•⁠  ⁠course (string: the course name)
+•⁠  ⁠professor (string: the teacher/professor name, "N/A" if unknown)
+•⁠  ⁠due_date (string like "Mon, Apr 7 2026 at 11:59 PM UTC", or "N/A")
+•⁠  ⁠points (string or number, "N/A" if not applicable)
+•⁠  ⁠submitted (boolean)
+•⁠  ⁠graded (boolean)
+•⁠  ⁠url (string: full Canvas URL to the item)
 
 Sort by due_date ascending. No markdown, no explanation, just the JSON array.
 
 IMPORTANT: If the SSO credentials are wrong or login fails, return exactly this JSON: [{"error": "Invalid UCSD credentials. Please check your username and password in Settings."}]
 `;
 
-  const createRes = await fetch(`${BASE_URL}/sessions`, {
+  const createRes = await fetch(⁠ ${BASE_URL}/sessions ⁠, {
     method: "POST",
     headers: {
       "X-Browser-Use-API-Key": apiKey,
@@ -90,7 +90,7 @@ IMPORTANT: If the SSO credentials are wrong or login fails, return exactly this 
     const status = createRes.status;
     if (status === 401 || status === 403) throw new Error("Invalid Browser Use API key.");
     if (status === 429) throw new Error("Rate limited. Please wait and try again.");
-    throw new Error(`Failed to create session (HTTP ${status}).`);
+    throw new Error(⁠ Failed to create session (HTTP ${status}). ⁠);
   }
 
   const session: BrowserUseSession = await createRes.json();
@@ -102,12 +102,12 @@ IMPORTANT: If the SSO credentials are wrong or login fails, return exactly this 
     signal?.throwIfAborted();
     await new Promise((r) => setTimeout(r, POLL_INTERVAL));
 
-    const pollRes = await fetch(`${BASE_URL}/sessions/${session.id}`, {
+    const pollRes = await fetch(⁠ ${BASE_URL}/sessions/${session.id} ⁠, {
       headers: { "X-Browser-Use-API-Key": apiKey },
       signal,
     });
 
-    if (!pollRes.ok) throw new Error(`Poll failed (HTTP ${pollRes.status}).`);
+    if (!pollRes.ok) throw new Error(⁠ Poll failed (HTTP ${pollRes.status}). ⁠);
 
     const result: BrowserUseSession = await pollRes.json();
 

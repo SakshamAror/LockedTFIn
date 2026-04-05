@@ -59,7 +59,7 @@ export function SidebarAnalytics({ events, assignments, lastUpdated }: SidebarAn
             </p>
           </div>
         ) : (
-          <p className="text-[10px] text-muted-foreground italic">No upcoming assignments</p>
+          <p className="text-[10px] font-mono text-muted-foreground italic">No upcoming assignments</p>
         )}
       </div>
 

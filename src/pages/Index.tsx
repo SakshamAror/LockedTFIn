@@ -6,6 +6,7 @@ import { ImportanceFunnel } from "@/components/ImportanceFunnel";
 import { SidebarAnalytics } from "@/components/SidebarAnalytics";
 import { ChatBubble } from "@/components/ChatBubble";
 import { CalendarEvents } from "@/components/CalendarEvents";
+import { TimelineChart } from "@/components/TimelineChart";
 import { CanvasAssignments, type AssignmentRange } from "@/components/CanvasAssignments";
 import { SettingsPanel, getSettings } from "@/components/SettingsPanel";
 import { fetchEmails } from "@/lib/browserUse";
@@ -264,6 +265,10 @@ export default function Index() {
                 onFetch={handleFetchEvents}
                 onCancel={() => { eventsAbortRef.current?.abort(); setEventsLoading(false); }}
               />
+
+              {eventsHasFetched && assignmentsHasFetched && (
+                <TimelineChart events={events} assignments={assignments} />
+              )}
 
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-sm font-semibold text-foreground font-display">Priority Inbox</h2>

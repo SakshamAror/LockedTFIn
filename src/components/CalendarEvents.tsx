@@ -105,7 +105,7 @@ export function CalendarEvents() {
       {!loading && events.length > 0 && (
         <div className="space-y-1.5">
           {events.map((event, i) => (
-            <div key={event.id} className={`flex items-start gap-3 rounded-lg p-2.5 transition-colors hover:bg-muted/30 ${i % 2 === 1 ? 'bg-muted/15' : ''}`}>
+            <div key={event.id} className={`flex items-start gap-3 rounded-lg p-2.5 transition-colors hover:bg-muted/40 border border-border/30 ${i % 2 === 1 ? 'bg-muted/25' : 'bg-muted/5'}`}>
               <div className="h-9 w-9 rounded-lg bg-accent/50 flex items-center justify-center shrink-0">
                 <Calendar className="h-4 w-4 text-accent-foreground" />
               </div>

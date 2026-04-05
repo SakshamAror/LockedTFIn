@@ -29,6 +29,8 @@ export async function fetchEmails(signal?: AbortSignal, timeRange: "today" | "we
     throw new Error("Please configure your API key and email in Settings first.");
   }
 
+  const timeDesc = timeRange === "today" ? "today and yesterday" : timeRange === "week" ? "the past 7 days" : "the past 30 days";
+
   const createRes = await fetch(`${BASE_URL}/sessions`, {
     method: "POST",
     headers: {
@@ -36,7 +38,7 @@ export async function fetchEmails(signal?: AbortSignal, timeRange: "today" | "we
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      task: `Using composio connections, read only my emails from today and yesterday. Then, get my 5 most important unread emails (at ${email}) (if any) from today and yesterday and rank them by potential importance. Return ONLY a valid JSON array with objects having these fields: sender (string), subject (string), preview (first 1-2 sentences of the email body), time (string like "9:30 AM"), importance ("critical" | "high" | "medium"), category (string like "Security", "Work", "Finance", "Social", "Updates"). No markdown, no explanation, just the JSON array.`,
+      task: `Go to Gmail (${email}) using composio connections. Find the top ${count} most important unread emails from ${timeDesc}. Skip newsletters, promotions, and automated notifications. For each email return: sender, subject, preview (first 1-2 sentences of body), time (e.g. "9:30 AM"), date (e.g. "Apr 5"), importance ("critical"|"high"|"medium"), category (e.g. "Security","Work","Finance","Social","Updates"). Return ONLY a raw JSON array. No markdown fences, no explanation.`,
     }),
     signal,
   });

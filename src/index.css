@@ -70,7 +70,7 @@
     background-position: center;
     background-attachment: fixed;
     background-repeat: no-repeat;
-    animation: bg-drift 60s ease-in-out infinite;
+    animation: bg-drift 180s ease-in-out infinite;
   }
 
   @keyframes bg-drift {

@@ -24,7 +24,22 @@ export function CalendarEvents({ events, loading, hasFetched, error, eventRange,
           <div className="h-7 w-7 rounded-lg bg-primary/15 flex items-center justify-center">
             <Calendar className="h-3.5 w-3.5 text-primary" />
           </div>
-          <h2 className="text-sm font-semibold text-foreground font-display">Upcoming Events</h2>
+          <h2 className="text-sm font-semibold text-foreground">Upcoming Events</h2>
+          <div className="flex gap-1 ml-2">
+            {([1, 7, 14] as EventRange[]).map((r) => (
+              <button
+                key={r}
+                onClick={() => onRangeChange(r)}
+                className={`px-2 py-0.5 rounded-md text-[10px] font-medium transition-all ${
+                  eventRange === r
+                    ? "bg-primary/20 text-primary shadow-[0_0_12px_-4px_hsl(var(--primary)/0.4)]"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                }`}
+              >
+                {r === 1 ? "1d" : r === 7 ? "7d" : "14d"}
+              </button>
+            ))}
+          </div>
         </div>
         <div className="flex items-center gap-2">
           {loading && (

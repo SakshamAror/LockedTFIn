@@ -14,8 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "monospace"],
-        display: ["ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "monospace"],
+        sans: ["'JetBrains Mono'", "ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "monospace"],
+        display: ["'Space Grotesk'", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",

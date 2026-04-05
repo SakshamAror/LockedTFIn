@@ -32,7 +32,7 @@ export function CanvasAssignments({ onOpenSettings }: { onOpenSettings: () => vo
     setLoading(true);
     setError(null);
     abortRef.current = new AbortController();
-    toast.info("Fetching Canvas assignments… this may take a few minutes (Duo 2FA required).");
+    toast.info("Fetching Canvas assignments… A Duo 2FA prompt will appear on your device — please approve it to continue.", { duration: 10000 });
 
     try {
       const fetched = await fetchCanvasAssignments(abortRef.current.signal);

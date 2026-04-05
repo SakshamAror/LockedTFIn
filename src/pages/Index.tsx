@@ -52,7 +52,7 @@ export default function Index() {
     toast.info("Fetching your emails… this may take a few minutes.");
 
     try {
-      const fetched = await fetchEmails(abortRef.current.signal);
+      const fetched = await fetchEmails(abortRef.current.signal, timeRange, emailCount);
       if (fetched.length > 0) {
         setEmails(fetched);
         toast.success(`Found ${fetched.length} important email${fetched.length !== 1 ? "s" : ""}!`);

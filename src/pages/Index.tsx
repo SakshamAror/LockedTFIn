@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { Mail, Inbox, RefreshCw, Loader2, Settings, XCircle, AlertTriangle, Calendar, Hash, Zap } from "lucide-react";
+import { Mail, Inbox, RefreshCw, Loader2, Settings, XCircle, AlertTriangle, Calendar, Hash, GraduationCap, Clock } from "lucide-react";
 import { EmailCard } from "@/components/EmailCard";
 import { EmailSkeleton } from "@/components/EmailSkeleton";
 import { ImportanceFunnel } from "@/components/ImportanceFunnel";
@@ -58,6 +58,9 @@ export default function Index() {
   });
 
   const userName = email?.split("@")[0] || "there";
+
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
 
   // Email fetch
   const handleGetEmails = useCallback(async () => {
@@ -208,19 +211,56 @@ export default function Index() {
       </aside>
 
       <main className="flex-1 flex flex-col h-screen overflow-hidden">
-        <header className="glass-subtle rounded-none border-x-0 border-t-0 flex items-center justify-between px-8 py-5 shrink-0">
-          <div>
-            <h1 className="text-xl font-semibold text-foreground font-display">Good morning, {userName}</h1>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {today} · {emails.length} important email{emails.length !== 1 ? "s" : ""} today
-            </p>
+        <header className="glass-subtle rounded-none border-x-0 border-t-0 flex items-center justify-between px-8 py-4 shrink-0">
+          <div className="flex flex-col gap-1">
+            <h1 className="text-xl font-semibold text-foreground font-display">{greeting}, {userName}</h1>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs text-muted-foreground">{today}</span>
+              {lastUpdated && (
+                <>
+                  <span className="text-muted-foreground/40 text-xs">·</span>
+                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Clock className="h-3 w-3" />
+                    Updated {lastUpdated.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+                  </span>
+                </>
+              )}
+            </div>
           </div>
-          {isAnyLoading && (
-            <Button variant="outline" size="sm" onClick={handleCancelAll} className="gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10">
-              <XCircle className="h-3.5 w-3.5" />
-              Cancel All
-            </Button>
-          )}
+
+          <div className="flex items-center gap-3">
+            {/* Status pills */}
+            <div className="flex items-center gap-1.5">
+              {emailHasFetched && (
+                <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+                  <Mail className="h-3 w-3" />
+                  {emails.length} email{emails.length !== 1 ? "s" : ""}
+                </span>
+              )}
+              {eventsHasFetched && (
+                <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                  <Calendar className="h-3 w-3" />
+                  {events.length} event{events.length !== 1 ? "s" : ""}
+                </span>
+              )}
+              {assignmentsHasFetched && (
+                <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                  <GraduationCap className="h-3 w-3" />
+                  {assignments.length} due
+                </span>
+              )}
+            </div>
+
+            {isAnyLoading && (
+              <>
+                <div className="h-4 w-px bg-border/50" />
+                <Button variant="outline" size="sm" onClick={handleCancelAll} className="gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10">
+                  <XCircle className="h-3.5 w-3.5" />
+                  Cancel
+                </Button>
+              </>
+            )}
+          </div>
         </header>
 
         <div className="flex-1 overflow-auto p-8">

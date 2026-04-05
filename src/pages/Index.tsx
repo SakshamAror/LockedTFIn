@@ -84,7 +84,7 @@ export default function Index() {
           <div className="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center">
             <Inbox className="h-4 w-4 text-primary" />
           </div>
-          <span className="text-sm font-semibold text-foreground tracking-tight font-display">MailPulse</span>
+          <span className="text-sm font-semibold text-foreground tracking-tight font-display">LockeTFIn</span>
         </div>
         <div className="flex-1">
           <ImportanceFunnel emails={emails} />

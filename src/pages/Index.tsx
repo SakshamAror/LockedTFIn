@@ -5,7 +5,7 @@ import { EmailSkeleton } from "@/components/EmailSkeleton";
 import { ImportanceFunnel } from "@/components/ImportanceFunnel";
 import { SidebarAnalytics } from "@/components/SidebarAnalytics";
 import { ChatBubble } from "@/components/ChatBubble";
-import { CalendarEvents } from "@/components/CalendarEvents";
+import { CalendarEvents, type EventRange } from "@/components/CalendarEvents";
 import { TimelineChart } from "@/components/TimelineChart";
 import { CanvasAssignments, type AssignmentRange } from "@/components/CanvasAssignments";
 import { SettingsPanel, getSettings } from "@/components/SettingsPanel";
@@ -32,6 +32,7 @@ export default function Index() {
   const [eventsLoading, setEventsLoading] = useState(false);
   const [eventsHasFetched, setEventsHasFetched] = useState(false);
   const [eventsError, setEventsError] = useState<string | null>(null);
+  const [eventRange, setEventRange] = useState<EventRange>(7);
   const eventsAbortRef = useRef<AbortController | null>(null);
 
   // Canvas state
@@ -266,6 +267,8 @@ export default function Index() {
                 loading={eventsLoading}
                 hasFetched={eventsHasFetched}
                 error={eventsError}
+                eventRange={eventRange}
+                onRangeChange={setEventRange}
                 onFetch={handleFetchEvents}
                 onCancel={() => { eventsAbortRef.current?.abort(); setEventsLoading(false); }}
               />

@@ -126,10 +126,21 @@ export function ChatBubble({ onOpenChange }: ChatBubbleProps) {
                 <div className="h-14 w-14 rounded-2xl bg-primary/15 flex items-center justify-center mx-auto mb-4">
                   <MessageCircle className="h-7 w-7 text-primary" />
                 </div>
-                <h2 className="text-lg font-semibold text-foreground font-display mb-2">What can I help with?</h2>
-                <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                  Type a task below and I'll run it via Browser Use. The session stays open so you can send follow-up commands.
+                <h2 className="text-lg font-semibold text-foreground font-display mb-2">Your Email & Calendar Assistant</h2>
+                <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-4">
+                  I can help you manage your <span className="text-foreground font-medium">Gmail</span> and <span className="text-foreground font-medium">Google Calendar</span> — send emails, check your inbox, create events, update meetings, and more.
                 </p>
+                <div className="flex flex-wrap justify-center gap-2 max-w-md mx-auto">
+                  {["Send an email", "Check my calendar", "Create a meeting", "Read my latest emails"].map((hint) => (
+                    <button
+                      key={hint}
+                      onClick={() => { setInput(hint); }}
+                      className="text-xs px-3 py-1.5 rounded-full border border-border/50 text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
+                    >
+                      {hint}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
             {messages.map((msg) => (

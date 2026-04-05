@@ -64,7 +64,7 @@
 
   body {
     @apply text-foreground font-sans antialiased;
-    font-family: 'Inter', sans-serif;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     background-image: url('/images/wallpaper.jpg');
     background-size: cover;
     background-position: center;

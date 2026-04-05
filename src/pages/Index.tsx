@@ -10,6 +10,7 @@ import { SettingsPanel, getSettings } from "@/components/SettingsPanel";
 import { fetchEmails } from "@/lib/browserUse";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import type { Email, TimeRange, EmailCount } from "@/components/EmailCard";
 
 export default function Index() {

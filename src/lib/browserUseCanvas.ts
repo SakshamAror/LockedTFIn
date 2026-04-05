@@ -44,7 +44,7 @@ Fill username: "${canvasUsername}"
 Fill password: "${canvasPassword}"
 Click the login/submit button.
 
-## STEP 2 — Duo 2FA
+## STEP 2 — Duo 2FA (Do not end the session here or stop for next user input)
 After login, you will be redirected to a Duo Security page at duosecurity.com.
 A push notification is automatically sent to the user's phone.
 Wait silently — poll the current URL every 2 seconds for up to 3 minutes.

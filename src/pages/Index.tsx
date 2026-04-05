@@ -5,6 +5,7 @@ import { EmailSkeleton } from "@/components/EmailSkeleton";
 import { ImportanceFunnel } from "@/components/ImportanceFunnel";
 import { ChatBubble } from "@/components/ChatBubble";
 import { CalendarEvents } from "@/components/CalendarEvents";
+import { CanvasAssignments } from "@/components/CanvasAssignments";
 import { SettingsPanel, getSettings } from "@/components/SettingsPanel";
 import { fetchEmails } from "@/lib/browserUse";
 import { Button } from "@/components/ui/button";

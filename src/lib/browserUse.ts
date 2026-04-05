@@ -36,7 +36,7 @@ export async function fetchEmails(signal?: AbortSignal): Promise<Email[]> {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      task: `Pull out my 10 most important unread emails (at ${email}) (if any) from today and rank them by potential importance. Return ONLY a valid JSON array with objects having these fields: sender (string), subject (string), preview (first 1-2 sentences of the email body), time (string like "9:30 AM"), importance ("critical" | "high" | "medium"), category (string like "Security", "Work", "Finance", "Social", "Updates"). No markdown, no explanation, just the JSON array.`,
+      task: `Pull out my 5 most important unread emails (at ${email}) (if any) from today and rank them by potential importance. Return ONLY a valid JSON array with objects having these fields: sender (string), subject (string), preview (first 1-2 sentences of the email body), time (string like "9:30 AM"), importance ("critical" | "high" | "medium"), category (string like "Security", "Work", "Finance", "Social", "Updates"). No markdown, no explanation, just the JSON array.`,
     }),
     signal,
   });

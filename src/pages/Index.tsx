@@ -5,7 +5,7 @@ import { EmailSkeleton } from "@/components/EmailSkeleton";
 import { ImportanceFunnel } from "@/components/ImportanceFunnel";
 import { SidebarAnalytics } from "@/components/SidebarAnalytics";
 import { ChatBubble } from "@/components/ChatBubble";
-import { CalendarEvents } from "@/components/CalendarEvents";
+import { CalendarEvents, type EventRange } from "@/components/CalendarEvents";
 import { TimelineChart } from "@/components/TimelineChart";
 import { CanvasAssignments, type AssignmentRange } from "@/components/CanvasAssignments";
 import { SettingsPanel, getSettings } from "@/components/SettingsPanel";

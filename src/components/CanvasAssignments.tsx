@@ -153,13 +153,13 @@ export function CanvasAssignments({ onOpenSettings }: { onOpenSettings: () => vo
       {/* Assignment list */}
       {!loading && assignments.length > 0 && (
         <div className="space-y-1.5">
-          {assignments.map((a) => (
+          {assignments.map((a, i) => (
             <a
               key={a.id}
               href={a.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-start gap-3 rounded-lg p-2.5 hover:bg-muted/30 transition-colors group"
+              className={`flex items-start gap-3 rounded-lg p-2.5 hover:bg-muted/40 transition-colors group border border-border/30 ${i % 2 === 1 ? 'bg-muted/25' : 'bg-muted/5'}`}
             >
               <div className="h-9 w-9 rounded-lg bg-warning/10 flex items-center justify-center shrink-0">
                 <BookOpen className="h-4 w-4 text-warning" />

@@ -5,6 +5,15 @@ const BASE_URL = "https://api.browser-use.com/api/v3";
 const TIMEOUT_MS = 10 * 60 * 1000;
 const POLL_INTERVAL = 5000;
 
+async function stopSession(sessionId: string, apiKey: string) {
+  try {
+    await fetch(`${BASE_URL}/sessions/${sessionId}/stop`, {
+      method: "PUT",
+      headers: { "X-Browser-Use-API-Key": apiKey },
+    });
+  } catch { /* best-effort */ }
+}
+
 interface BrowserUseSession {
   id: string;
   status?: string;
@@ -13,14 +22,15 @@ interface BrowserUseSession {
   lastStepSummary?: string | null;
 }
 
-// Google Calendar event colors by course type
-const GCal_COLOR: Record<CourseType, string> = {
-  LE: "Blueberry",   // blue
-  DI: "Sage",        // green
-  LA: "Banana",      // amber/yellow
-  SE: "Peacock",     // cyan
-  MI: "Tomato",      // red
-  FI: "Grape",       // deep rose
+// ── Course push ───────────────────────────────────────────────────────────────
+
+const GCAL_COLOR: Record<CourseType, string> = {
+  LE: "Blueberry",
+  DI: "Sage",
+  LA: "Banana",
+  SE: "Peacock",
+  MI: "Tomato",
+  FI: "Grape",
 };
 
 const TYPE_LABEL: Record<CourseType, string> = {
@@ -32,60 +42,95 @@ const TYPE_LABEL: Record<CourseType, string> = {
   FI: "Final",
 };
 
+const DAY_ORDER = ["1", "2", "3", "4", "5", "6", "7"];
 const DAY_NAMES: Record<string, string> = {
-  "1": "Monday",
-  "2": "Tuesday",
-  "3": "Wednesday",
-  "4": "Thursday",
-  "5": "Friday",
-  "6": "Saturday",
-  "7": "Sunday",
+  "1": "Monday", "2": "Tuesday", "3": "Wednesday",
+  "4": "Thursday", "5": "Friday", "6": "Saturday", "7": "Sunday",
 };
 
 function fmt24(hh: number, mm: number) {
   return `${hh.toString().padStart(2, "0")}:${mm.toString().padStart(2, "0")}`;
 }
 
-function fmtDate(dateStr: string) {
-  // "YYYY-MM-DD" → "Month Day, Year"
+function fmtDateLong(dateStr: string) {
   try {
     return new Date(dateStr + "T12:00:00").toLocaleDateString("en-US", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
+      weekday: "long", month: "long", day: "numeric", year: "numeric",
     });
-  } catch {
-    return dateStr;
-  }
+  } catch { return dateStr; }
 }
 
-function buildEventList(courses: WebRegCourse[]): string {
+interface CourseEvent {
+  num: number;
+  kind: "WEEKLY" | "ONE-TIME";
+  title: string;
+  days?: string;       // "Monday, Wednesday, Friday"
+  date?: string;       // "Friday, June 12, 2026"
+  startTime: string;   // "11:00"
+  endTime: string;     // "11:50"
+  location: string;
+  description: string;
+  color: string;
+}
+
+function buildCourseEvents(courses: WebRegCourse[]): CourseEvent[] {
   const ONE_TIME: CourseType[] = ["FI", "MI"];
-  const lines: string[] = [];
+  const events: CourseEvent[] = [];
+
+  // ── Weekly: deduplicate and merge days by section key ────────────────────
+  const sectionMap = new Map<string, { course: WebRegCourse; dayCodes: Set<string> }>();
+  const examMap = new Map<string, WebRegCourse>();
 
   for (const c of courses) {
-    const label = `${c.subj} ${c.code} ${TYPE_LABEL[c.type]} (${c.section})`;
-    const start = fmt24(c.startHH, c.startMM);
-    const end = fmt24(c.endHH, c.endMM);
-    const color = GCal_COLOR[c.type];
-    const loc = c.location || "";
-    const desc = c.instructor ? `Instructor: ${c.instructor}` : "";
-
     if (ONE_TIME.includes(c.type)) {
-      if (!c.startDate) continue;
-      lines.push(
-        `- ONE-TIME EVENT: "${label}" | Date: ${fmtDate(c.startDate)} | Time: ${start}–${end} | Location: "${loc}" | Description: "${desc}" | Color: ${color}`
-      );
-    } else {
-      const day = DAY_NAMES[c.dayCode];
-      if (!day) continue;
-      lines.push(
-        `- WEEKLY RECURRING: "${label}" | Every ${day} | Time: ${start}–${end} | Location: "${loc}" | Description: "${desc}" | Color: ${color}`
-      );
+      // Deduplicate exams by subj+code+type+startDate
+      const examKey = `${c.subj}|${c.code}|${c.type}|${c.startDate ?? ""}`;
+      if (!examMap.has(examKey)) examMap.set(examKey, c);
+      continue;
     }
+    const key = `${c.subj}|${c.code}|${c.section}|${c.type}`;
+    if (!sectionMap.has(key)) sectionMap.set(key, { course: c, dayCodes: new Set() });
+    if (c.dayCode) sectionMap.get(key)!.dayCodes.add(c.dayCode);
   }
 
-  return lines.join("\n");
+  let num = 1;
+
+  for (const { course: c, dayCodes } of sectionMap.values()) {
+    const days = DAY_ORDER
+      .filter((d) => dayCodes.has(d))
+      .map((d) => DAY_NAMES[d])
+      .join(", ");
+    if (!days) continue;
+
+    events.push({
+      num: num++,
+      kind: "WEEKLY",
+      title: `${c.subj} ${c.code} ${TYPE_LABEL[c.type]} (${c.section})`,
+      days,
+      startTime: fmt24(c.startHH, c.startMM),
+      endTime: fmt24(c.endHH, c.endMM),
+      location: c.location || "",
+      description: c.instructor ? `Instructor: ${c.instructor}` : "",
+      color: GCAL_COLOR[c.type],
+    });
+  }
+
+  for (const c of examMap.values()) {
+    if (!c.startDate) continue;
+    events.push({
+      num: num++,
+      kind: "ONE-TIME",
+      title: `${c.subj} ${c.code} ${TYPE_LABEL[c.type]}`,
+      date: fmtDateLong(c.startDate),
+      startTime: fmt24(c.startHH, c.startMM),
+      endTime: fmt24(c.endHH, c.endMM),
+      location: c.location || "",
+      description: c.instructor ? `Instructor: ${c.instructor}` : "",
+      color: GCAL_COLOR[c.type],
+    });
+  }
+
+  return events;
 }
 
 export async function pushCoursesToCalendar(
@@ -94,40 +139,66 @@ export async function pushCoursesToCalendar(
   signal?: AbortSignal
 ): Promise<number> {
   const { apiKey, email } = getSettings();
-
   if (!apiKey || !email) throw new Error("Please configure your API key and email in Settings first.");
   if (courses.length === 0) throw new Error("No courses to add.");
 
-  const eventList = buildEventList(courses);
-  const oneTimeCount = courses.filter((c) => ["FI", "MI"].includes(c.type)).length;
-  const weeklyCount = courses.length - oneTimeCount;
+  const events = buildCourseEvents(courses);
+  const weeklyCount = events.filter((e) => e.kind === "WEEKLY").length;
+  const examCount = events.filter((e) => e.kind === "ONE-TIME").length;
+  const total = events.length;
 
-  const task = `
-Open Google Calendar for the account ${email} from composio connections.
+  // Format as a numbered list so the AI knows exactly how many events to create
+  const eventLines = events.map((e) => {
+    if (e.kind === "WEEKLY") {
+      return [
+        `EVENT ${e.num} of ${total} [WEEKLY RECURRING]`,
+        `  Title:       ${e.title}`,
+        `  Days:        ${e.days}`,
+        `  Start time:  ${e.startTime}`,
+        `  End time:    ${e.endTime}`,
+        `  Location:    ${e.location || "none"}`,
+        `  Description: ${e.description || "none"}`,
+        `  Color:       ${e.color}`,
+        `  Repeat until: June 14, 2026`,
+      ].join("\n");
+    } else {
+      return [
+        `EVENT ${e.num} of ${total} [ONE-TIME]`,
+        `  Title:       ${e.title}`,
+        `  Date:        ${e.date}`,
+        `  Start time:  ${e.startTime}`,
+        `  End time:    ${e.endTime}`,
+        `  Location:    ${e.location || "none"}`,
+        `  Description: ${e.description || "none"}`,
+        `  Color:       ${e.color}`,
+      ].join("\n");
+    }
+  }).join("\n\n");
 
-Add the following class schedule for ${termName} to the calendar. Create EACH event listed below. Do NOT skip any.
+  const task = `Open Google Calendar for the account ${email} from composio connections.
 
-IMPORTANT RULES:
-- For WEEKLY RECURRING events: create a repeating event that recurs every week on the specified day. Set it to repeat for the rest of the academic term (until June 14, 2026 for Spring 2026).
-- For ONE-TIME events: create a single event on the exact date shown.
-- Apply the specified Color to each event using Google Calendar's color picker.
-- Set the Location field for each event.
-- Set the Description field for each event.
-- After adding ALL events, confirm completion.
+You must create exactly ${total} calendar events for ${termName}. The list below is already deduplicated — do NOT create any event more than once.
 
-EVENTS TO ADD (${courses.length} total — ${weeklyCount} weekly, ${oneTimeCount} one-time):
-${eventList}
+RULES:
+1. WEEKLY RECURRING events: create ONE event that repeats on ALL listed days every week until June 14, 2026. Do NOT create separate events for each day.
+2. ONE-TIME events: create a single event on the exact date listed.
+3. After creating each event, open the event color picker and select the exact color name shown (these are Google Calendar's built-in color names).
+4. Fill in Location and Description exactly as shown.
+5. Create the events one by one in order. After finishing all ${total}, stop.
 
-Color reference in Google Calendar:
-- Blueberry = dark blue
-- Sage = muted green
-- Banana = yellow
-- Peacock = teal/cyan
-- Tomato = red
-- Grape = purple/dark rose
+COLOR REFERENCE (Google Calendar built-in names):
+- Blueberry = blue (lectures)
+- Sage = green (discussions)
+- Banana = yellow (labs)
+- Peacock = teal (seminars)
+- Tomato = red (midterms)
+- Grape = purple (finals)
 
-After creating all events, return the number of events successfully created as a plain integer.
-`;
+EVENTS (${total} total: ${weeklyCount} weekly, ${examCount} one-time):
+
+${eventLines}
+
+When done, return only the number of events created as a plain integer.`;
 
   const createRes = await fetch(`${BASE_URL}/sessions`, {
     method: "POST",
@@ -168,8 +239,9 @@ After creating all events, return the number of events successfully created as a
       result.output !== undefined &&
       !(typeof result.output === "string" && result.output.trim() === "")
     ) {
+      await stopSession(session.id, apiKey);
       const n = parseInt(String(result.output).trim(), 10);
-      return isNaN(n) ? courses.length : n;
+      return isNaN(n) ? total : n;
     }
 
     if (result.status === "stopped") return 0;
@@ -178,7 +250,7 @@ After creating all events, return the number of events successfully created as a
   throw new Error("Push to calendar timed out after 10 minutes.");
 }
 
-// ── Push assignments to Google Calendar ───────────────────────────────────────
+// ── Assignments push ──────────────────────────────────────────────────────────
 
 export interface PushableAssignment {
   title: string;
@@ -187,15 +259,15 @@ export interface PushableAssignment {
   points: string;
   url: string;
   source: "canvas" | "gradescope";
-  type?: string; // canvas type: assignment/quiz/discussion_topic
+  type?: string;
 }
 
 function assignmentColor(a: PushableAssignment): string {
-  if (a.source === "gradescope") return "Sage";       // green
+  if (a.source === "gradescope") return "Sage";
   switch (a.type) {
-    case "quiz": return "Banana";                      // yellow
-    case "discussion_topic": return "Peacock";         // cyan
-    default: return "Blueberry";                       // blue
+    case "quiz": return "Banana";
+    case "discussion_topic": return "Peacock";
+    default: return "Blueberry";
   }
 }
 
@@ -207,28 +279,53 @@ export async function pushAssignmentsToCalendar(
   if (!apiKey || !email) throw new Error("Please configure your API key and email in Settings first.");
   if (assignments.length === 0) throw new Error("No assignments to add.");
 
-  const lines = assignments.map((a) => {
-    const color = assignmentColor(a);
-    const desc = `Course: ${a.course}${a.points !== "N/A" ? ` | Points: ${a.points}` : ""}${a.url ? ` | URL: ${a.url}` : ""}`;
-    return `- "${a.title}" | Due: ${a.dueDate} | Description: "${desc}" | Color: ${color}`;
+  // Deduplicate by title+dueDate
+  const seen = new Set<string>();
+  const deduped = assignments.filter((a) => {
+    const key = `${a.title}|${a.dueDate}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
   });
 
-  const task = `
-Open Google Calendar for the account ${email} from composio connections.
+  const total = deduped.length;
 
-Add the following assignment deadlines as calendar events. For each, create a 1-hour event ending at the due time (or an all-day event if no time is given). Apply the specified Color.
+  const eventLines = deduped.map((a, i) => {
+    const color = assignmentColor(a);
+    const desc = `Course: ${a.course}${a.points !== "N/A" ? ` | Points: ${a.points}` : ""}${a.url ? ` | URL: ${a.url}` : ""}`;
+    return [
+      `ASSIGNMENT ${i + 1} of ${total}`,
+      `  Title:    ${a.title}`,
+      `  Due:      ${a.dueDate}`,
+      `  Desc:     ${desc}`,
+      `  Color:    ${color}`,
+    ].join("\n");
+  }).join("\n\n");
 
-ASSIGNMENTS (${assignments.length} total):
-${lines.join("\n")}
+  const task = `Open Google Calendar for the account ${email} from composio connections.
 
-Color reference:
-- Blueberry = dark blue (Canvas assignments)
+You must create exactly ${total} calendar events for assignment deadlines. The list is already deduplicated — do NOT create any event more than once.
+
+RULES:
+1. Each event must be exactly 1 minute long, starting AT the due time (e.g. due 11:59 PM → event is 11:59 PM to 12:00 AM).
+2. If the due time has no time component, create an all-day event on the due date.
+3. If there is no date at all, skip that assignment.
+4. After creating each event, open the color picker and select the exact color name shown.
+5. Set the Description field exactly as shown.
+6. Do NOT prefix the title with "Due:" — use the title exactly as listed.
+7. Create events one by one in order. After all ${total} are done, stop.
+
+COLOR REFERENCE (Google Calendar built-in names):
+- Blueberry = blue (Canvas assignments)
 - Banana = yellow (Canvas quizzes)
 - Peacock = teal (Canvas discussions)
 - Sage = green (Gradescope)
 
-After creating all events, return the number of events successfully created as a plain integer.
-`;
+ASSIGNMENTS (${total} total):
+
+${eventLines}
+
+When done, return only the number of events created as a plain integer.`;
 
   const createRes = await fetch(`${BASE_URL}/sessions`, {
     method: "POST",
@@ -269,8 +366,9 @@ After creating all events, return the number of events successfully created as a
       result.output !== undefined &&
       !(typeof result.output === "string" && result.output.trim() === "")
     ) {
+      await stopSession(session.id, apiKey);
       const n = parseInt(String(result.output).trim(), 10);
-      return isNaN(n) ? assignments.length : n;
+      return isNaN(n) ? total : n;
     }
 
     if (result.status === "stopped") return 0;

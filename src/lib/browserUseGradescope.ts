@@ -4,6 +4,15 @@ const BASE_URL = "https://api.browser-use.com/api/v3";
 const TIMEOUT_MS = 10 * 60 * 1000;
 const POLL_INTERVAL = 5000;
 
+async function stopSession(sessionId: string, apiKey: string) {
+  try {
+    await fetch(`${BASE_URL}/sessions/${sessionId}/stop`, {
+      method: "PUT",
+      headers: { "X-Browser-Use-API-Key": apiKey },
+    });
+  } catch { /* best-effort */ }
+}
+
 export interface GradescopeAssignment {
   id: number;
   title: string;
@@ -138,6 +147,7 @@ If login fails return: [{"error": "Invalid UCSD credentials."}]
       result.output !== undefined &&
       !(typeof result.output === "string" && result.output.trim() === "")
     ) {
+      await stopSession(session.id, apiKey);
       return parseOutput(result.output);
     }
 

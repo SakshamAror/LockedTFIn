@@ -105,18 +105,12 @@ export default function Index() {
               {today} · {emails.length} important email{emails.length !== 1 ? "s" : ""} today
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            {loading && (
-              <Button variant="outline" size="sm" onClick={handleCancel} className="gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10">
-                <XCircle className="h-3.5 w-3.5" />
-                Cancel
-              </Button>
-            )}
-            <Button onClick={handleGetEmails} disabled={loading} className="gap-2">
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-              {loading ? "Fetching…" : "Get Emails"}
+          {loading && (
+            <Button variant="outline" size="sm" onClick={handleCancel} className="gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10">
+              <XCircle className="h-3.5 w-3.5" />
+              Cancel
             </Button>
-          </div>
+          )}
         </header>
 
         <div className="p-8">

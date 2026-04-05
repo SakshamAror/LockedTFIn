@@ -22,12 +22,14 @@ interface GmailMessage {
   labelIds?: string[];
 }
 
-export async function fetchEmails(signal?: AbortSignal): Promise<Email[]> {
+export async function fetchEmails(signal?: AbortSignal, timeRange: TimeRange = "today", count: EmailCount = 5): Promise<Email[]> {
   const { apiKey, email } = getSettings();
 
   if (!apiKey || !email) {
     throw new Error("Please configure your API key and email in Settings first.");
   }
+
+  const rangeText = timeRange === "today" ? "from today and yesterday" : timeRange === "week" ? "from the past 7 days" : "from the past 30 days";
 
   const createRes = await fetch(`${BASE_URL}/sessions`, {
     method: "POST",
@@ -36,7 +38,7 @@ export async function fetchEmails(signal?: AbortSignal): Promise<Email[]> {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      task: `Using composio connections, read only my emails from today and yesterday. Then, get my 5 most important unread emails (at ${email}) (if any) from today and yesterday and rank them by potential importance. Return ONLY a valid JSON array with objects having these fields: sender (string), subject (string), preview (first 1-2 sentences of the email body), time (string like "9:30 AM"), importance ("critical" | "high" | "medium"), category (string like "Security", "Work", "Finance", "Social", "Updates"). No markdown, no explanation, just the JSON array.`,
+      task: `Using composio connections, read only my emails ${rangeText}. Then, get my ${count} most important unread emails (at ${email}) (if any) ${rangeText} and rank them by potential importance. Return ONLY a valid JSON array with objects having these fields: sender (string), subject (string), preview (first 1-2 sentences of the email body), time (string like "9:30 AM"), date (string like "Apr 5"), importance ("critical" | "high" | "medium"), category (string like "Security", "Work", "Finance", "Social", "Updates"). No markdown, no explanation, just the JSON array.`,
     }),
     signal,
   });

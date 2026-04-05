@@ -150,17 +150,6 @@
     z-index: 0;
   }
 
-  .glass-subtle::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 15%;
-    right: 15%;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, hsla(195, 70%, 80%, 0.35), hsla(220, 60%, 75%, 0.2), transparent);
-    border-radius: 50%;
-    z-index: 1;
-  }
 
   .glass-subtle > * {
     position: relative;

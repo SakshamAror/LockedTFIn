@@ -97,7 +97,7 @@ export default function Index() {
         </button>
       </aside>
 
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto h-screen">
         <header className="glass-subtle rounded-none border-x-0 border-t-0 flex items-center justify-between px-8 py-5">
           <div>
             <h1 className="text-xl font-semibold text-foreground font-display">Good morning, {userName}</h1>

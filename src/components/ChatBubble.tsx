@@ -106,7 +106,7 @@ export function ChatBubble({ onOpenChange }: ChatBubbleProps) {
       setLoading(false);
       abortRef.current = null;
     }
-  }, [input, loading, open, toggleOpen]);
+  }, [input, loading, open, toggleOpen, isGmailOrCalendarTask]);
 
   const handleCancel = useCallback(() => {
     abortRef.current?.abort();

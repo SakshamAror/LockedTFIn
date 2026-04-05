@@ -241,18 +241,18 @@ export interface PushableAssignment {
 }
 
 function assignmentColor(a: PushableAssignment): string {
-  if (a.source === "gradescope") return "Sage";
+  if (a.source === "gradescope") return "3"; // Grape
   switch (a.type) {
-    case "quiz": return "Banana";
-    case "discussion_topic": return "Peacock";
-    default: return "Blueberry";
+    case "quiz": return "5"; // Banana
+    case "discussion_topic": return "7"; // Peacock
+    default: return "9"; // Blueberry
   }
 }
 
 export async function pushAssignmentsToCalendar(
   assignments: PushableAssignment[],
   signal?: AbortSignal
-): Promise<number> {
+): Promise<SyncResult> {
   const { apiKey, email } = getSettings();
   if (!apiKey || !email) throw new Error("Please configure your API key and email in Settings first.");
   if (assignments.length === 0) throw new Error("No assignments to add.");
@@ -267,47 +267,75 @@ export async function pushAssignmentsToCalendar(
   });
 
   const total = deduped.length;
+  const assignmentInstructions: string[] = [];
 
-  const eventLines = deduped.map((a, i) => {
-    const color = assignmentColor(a);
+  for (let i = 0; i < deduped.length; i++) {
+    const a = deduped[i];
+    if (!a.dueDate || a.dueDate === "N/A" || a.dueDate.trim() === "") continue;
+
+    const colorId = assignmentColor(a);
     const desc = `Course: ${a.course}${a.points !== "N/A" ? ` | Points: ${a.points}` : ""}${a.url ? ` | URL: ${a.url}` : ""}`;
-    return [
-      `ASSIGNMENT ${i + 1} of ${total}`,
-      `  Title:    ${a.title}`,
-      `  Due:      ${a.dueDate}`,
-      `  Desc:     ${desc}`,
-      `  Color:    ${color}`,
-    ].join("\n");
-  }).join("\n\n");
 
-  const task = `Open Google Calendar for the account ${email} from composio connections.
+    assignmentInstructions.push(
+      `Assignment ${i + 1}: Create a ONE-TIME 2-minute event titled "📝 ${a.title}" ` +
+      `at the due date/time: ${a.dueDate}. ` +
+      `Set end time = start time + 2 minutes. ` +
+      `Description: "${desc}". ` +
+      `Color ID: ${colorId}. Timezone: America/Los_Angeles.`
+    );
+  }
 
-You must create exactly ${total} calendar events for assignment deadlines. The list is already deduplicated — do NOT create any event more than once.
+  if (assignmentInstructions.length === 0) {
+    return { created: 0, failed: 0, errors: ["No assignments to add."] };
+  }
 
-RULES:
-1. Each event must be exactly 1 minute long, starting AT the due time (e.g. due 11:59 PM → event is 11:59 PM to 12:00 AM).
-2. If the due time has no time component, create an all-day event on the due date.
-3. If there is no date at all, skip that assignment.
-4. After creating each event, open the color picker and select the exact color name shown.
-5. Set the Description field exactly as shown.
-6. Do NOT prefix the title with "Due:" — use the title exactly as listed.
-7. Create events one by one in order. After all ${total} are done, stop.
+  return runSyncSession(
+    apiKey,
+    email,
+    `Create ALL of the following ${assignmentInstructions.length} ASSIGNMENT events on Google Calendar. Each is a one-time 2-minute event.\n\n${assignmentInstructions.join("\n\n")}`,
+    assignmentInstructions.length,
+    signal
+  );
+}
 
-COLOR REFERENCE (Google Calendar built-in names):
-- Blueberry = blue (Canvas assignments)
-- Banana = yellow (Canvas quizzes)
-- Peacock = teal (Canvas discussions)
-- Sage = green (Gradescope)
+// ── Session management ─────────────────────────────────────────────────────────
 
-ASSIGNMENTS (${total} total):
+async function runSyncSession(
+  apiKey: string,
+  email: string,
+  eventBlock: string,
+  expectedCount: number,
+  signal?: AbortSignal
+): Promise<SyncResult> {
+  const task = `
+You are automating a browser to create Google Calendar events using the composio-connected Google Calendar for ${email}.
 
-${eventLines}
+${eventBlock}
 
-When done, return only the number of events created as a plain integer.`;
+IMPORTANT RULES:
+- For recurring events, use the RRULE format in the recurrence field
+- For one-time events, just set start and end times
+- Color ID must be set for each event
+- All times are in America/Los_Angeles timezone
+- For 2-minute events, set end time = start time + 2 minutes
+- You MUST create EVERY event listed above. Do NOT skip any.
+
+After creating all events, return a JSON object:
+{
+  "created": number (how many events were successfully created),
+  "failed": number (how many failed),
+  "errors": string[] (error messages for any that failed)
+}
+
+No markdown, no explanation, just the JSON object.
+`;
 
   const createRes = await fetch(`${BASE_URL}/sessions`, {
     method: "POST",
-    headers: { "X-Browser-Use-API-Key": apiKey, "Content-Type": "application/json" },
+    headers: {
+      "X-Browser-Use-API-Key": apiKey,
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify({ task }),
     signal,
   });
@@ -320,7 +348,7 @@ When done, return only the number of events created as a plain integer.`;
   }
 
   const session: BrowserUseSession = await createRes.json();
-  if (!session.id) throw new Error("No session ID returned from Browser Use.");
+  if (!session.id) throw new Error("No session ID returned.");
 
   const start = Date.now();
   while (Date.now() - start < TIMEOUT_MS) {
@@ -331,26 +359,55 @@ When done, return only the number of events created as a plain integer.`;
       headers: { "X-Browser-Use-API-Key": apiKey },
       signal,
     });
-    if (!pollRes.ok) throw new Error(`Poll failed (HTTP ${pollRes.status}).`);
 
+    if (!pollRes.ok) throw new Error(`Poll failed (HTTP ${pollRes.status}).`);
     const result: BrowserUseSession = await pollRes.json();
 
-    if (result.status === "timed_out") throw new Error("Timed out while adding assignment events.");
-    if (result.status === "error" || result.isTaskSuccessful === false)
-      throw new Error(result.lastStepSummary || "Could not add assignments to Google Calendar.");
+    if (result.status === "timed_out") throw new Error("Calendar sync timed out.");
+    if (result.status === "error" || result.isTaskSuccessful === false) {
+      throw new Error(result.lastStepSummary || "Could not sync to Google Calendar.");
+    }
 
     if (
       result.output !== null &&
       result.output !== undefined &&
       !(typeof result.output === "string" && result.output.trim() === "")
     ) {
-      await stopSession(session.id, apiKey);
-      const n = parseInt(String(result.output).trim(), 10);
-      return isNaN(n) ? total : n;
+      return parseSyncResult(result.output, expectedCount);
     }
 
-    if (result.status === "stopped") return 0;
+    if (result.status === "stopped") {
+      return { created: 0, failed: expectedCount, errors: ["Session stopped unexpectedly."] };
+    }
   }
 
-  throw new Error("Push assignments timed out after 10 minutes.");
+  throw new Error("Calendar sync timed out after 10 minutes.");
+}
+
+function parseSyncResult(output: unknown, total: number): SyncResult {
+  let obj: Record<string, unknown> | null = null;
+
+  if (typeof output === "string") {
+    try {
+      obj = JSON.parse(output.trim());
+    } catch {
+      const match = output.match(/\{[\s\S]*\}/);
+      if (match) {
+        try { obj = JSON.parse(match[0]); } catch { /* ignore */ }
+      }
+    }
+  } else if (typeof output === "object" && output !== null) {
+    obj = output as Record<string, unknown>;
+  }
+
+  if (obj && typeof obj.created === "number") {
+    return {
+      created: obj.created as number,
+      failed: (obj.failed as number) ?? 0,
+      errors: Array.isArray(obj.errors) ? obj.errors.map(String) : [],
+    };
+  }
+
+  // If we can't parse, assume success
+  return { created: total, failed: 0, errors: [] };
 }

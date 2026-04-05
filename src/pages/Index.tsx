@@ -1,30 +1,53 @@
 import { useState, useRef, useCallback } from "react";
-import { Mail, Inbox, RefreshCw, Loader2, Settings, XCircle, AlertTriangle, Calendar, Hash } from "lucide-react";
+import { Mail, Inbox, RefreshCw, Loader2, Settings, XCircle, AlertTriangle, Calendar, Hash, Zap } from "lucide-react";
 import { EmailCard } from "@/components/EmailCard";
 import { EmailSkeleton } from "@/components/EmailSkeleton";
 import { ImportanceFunnel } from "@/components/ImportanceFunnel";
+import { SidebarAnalytics } from "@/components/SidebarAnalytics";
 import { ChatBubble } from "@/components/ChatBubble";
 import { CalendarEvents } from "@/components/CalendarEvents";
-import { CanvasAssignments } from "@/components/CanvasAssignments";
+import { CanvasAssignments, type AssignmentRange } from "@/components/CanvasAssignments";
 import { SettingsPanel, getSettings } from "@/components/SettingsPanel";
 import { fetchEmails } from "@/lib/browserUse";
+import { fetchCalendarEvents, type CalendarEvent } from "@/lib/browserUseCalendar";
+import { fetchCanvasAssignments, type CanvasAssignment } from "@/lib/browserUseCanvas";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { Email, TimeRange, EmailCount } from "@/components/EmailCard";
 
 export default function Index() {
+  // Email state
   const [emails, setEmails] = useState<Email[]>([]);
-  const [hasFetched, setHasFetched] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [emailHasFetched, setEmailHasFetched] = useState(false);
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState<TimeRange>("today");
   const [emailCount, setEmailCount] = useState<EmailCount>(5);
-  const abortRef = useRef<AbortController | null>(null);
+  const emailAbortRef = useRef<AbortController | null>(null);
 
-  const { apiKey, email } = getSettings();
+  // Calendar state
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(false);
+  const [eventsHasFetched, setEventsHasFetched] = useState(false);
+  const [eventsError, setEventsError] = useState<string | null>(null);
+  const eventsAbortRef = useRef<AbortController | null>(null);
+
+  // Canvas state
+  const [assignments, setAssignments] = useState<CanvasAssignment[]>([]);
+  const [assignmentsLoading, setAssignmentsLoading] = useState(false);
+  const [assignmentsHasFetched, setAssignmentsHasFetched] = useState(false);
+  const [assignmentsError, setAssignmentsError] = useState<string | null>(null);
+  const [assignmentRange, setAssignmentRange] = useState<AssignmentRange>(7);
+  const assignmentsAbortRef = useRef<AbortController | null>(null);
+
+  // Shared state
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+  const { apiKey, email, canvasUsername, canvasPassword } = getSettings();
   const isConnected = !!(apiKey && email);
+  const isCanvasConnected = !!(canvasUsername && canvasPassword && apiKey);
 
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
@@ -34,65 +57,147 @@ export default function Index() {
 
   const userName = email?.split("@")[0] || "there";
 
-  const handleCancel = useCallback(() => {
-    abortRef.current?.abort();
-    setLoading(false);
-    toast.info("Fetch cancelled.");
-  }, []);
-
-  const handleGetEmails = async () => {
+  // Email fetch
+  const handleGetEmails = useCallback(async () => {
     if (!isConnected) {
       toast.error("Please set your API key and email in Settings first.");
       setSettingsOpen(true);
       return;
     }
-
-    setLoading(true);
-    setError(null);
-    abortRef.current = new AbortController();
-    toast.info("Fetching your emails… this may take a few minutes.");
-
+    setEmailLoading(true);
+    setEmailError(null);
+    emailAbortRef.current = new AbortController();
+    toast.info("Fetching your emails…");
     try {
-      const fetched = await fetchEmails(abortRef.current.signal, timeRange, emailCount);
-      if (fetched.length > 0) {
-        setEmails(fetched);
-        toast.success(`Found ${fetched.length} important email${fetched.length !== 1 ? "s" : ""}!`);
-      } else {
-        setEmails([]);
-        toast.info("No important emails found today.");
-      }
-      setError(null);
-      setHasFetched(true);
+      const fetched = await fetchEmails(emailAbortRef.current.signal, timeRange, emailCount);
+      setEmails(fetched.length > 0 ? fetched : []);
+      setEmailError(null);
+      setEmailHasFetched(true);
+      if (fetched.length > 0) toast.success(`Found ${fetched.length} email${fetched.length !== 1 ? "s" : ""}!`);
+      else toast.info("No important emails found.");
     } catch (err: any) {
       if (err.name === "AbortError") return;
-      console.error(err);
       const msg = err.message || "Failed to fetch emails.";
-      setError(msg);
+      setEmailError(msg);
       toast.error(msg);
       setEmails([]);
-      setHasFetched(true);
+      setEmailHasFetched(true);
     } finally {
-      setLoading(false);
-      abortRef.current = null;
+      setEmailLoading(false);
+      emailAbortRef.current = null;
     }
-  };
+  }, [isConnected, timeRange, emailCount]);
 
-  const filterByImportance = (importance: string) => {
-    return emails.filter((e) => e.importance === importance);
-  };
+  // Calendar fetch
+  const handleFetchEvents = useCallback(async () => {
+    setEventsLoading(true);
+    setEventsError(null);
+    eventsAbortRef.current = new AbortController();
+    toast.info("Fetching calendar events…");
+    try {
+      const fetched = await fetchCalendarEvents(eventsAbortRef.current.signal);
+      setEvents(fetched);
+      setEventsHasFetched(true);
+      if (fetched.length > 0) toast.success(`Found ${fetched.length} event${fetched.length !== 1 ? "s" : ""}.`);
+      else toast.info("No upcoming events.");
+    } catch (err: any) {
+      if (err.name === "AbortError") return;
+      const msg = err.message || "Failed to fetch calendar.";
+      setEventsError(msg);
+      toast.error(msg);
+      setEventsHasFetched(true);
+    } finally {
+      setEventsLoading(false);
+      eventsAbortRef.current = null;
+    }
+  }, []);
+
+  // Canvas fetch
+  const handleFetchAssignments = useCallback(async () => {
+    if (!isCanvasConnected) {
+      toast.error("Please set your Canvas SSO credentials in Settings first.");
+      setSettingsOpen(true);
+      return;
+    }
+    setAssignmentsLoading(true);
+    setAssignmentsError(null);
+    assignmentsAbortRef.current = new AbortController();
+    toast.info("Fetching Canvas assignments… Approve Duo 2FA on your device.", { duration: 10000 });
+    try {
+      const fetched = await fetchCanvasAssignments(assignmentsAbortRef.current.signal);
+      setAssignments(fetched);
+      setAssignmentsHasFetched(true);
+      if (fetched.length > 0) toast.success(`Found ${fetched.length} assignment${fetched.length !== 1 ? "s" : ""}.`);
+      else toast.info("No assignments found.");
+    } catch (err: any) {
+      if (err.name === "AbortError") return;
+      const msg = err.message || "Failed to fetch assignments.";
+      setAssignmentsError(msg);
+      toast.error(msg);
+      setAssignmentsHasFetched(true);
+    } finally {
+      setAssignmentsLoading(false);
+      assignmentsAbortRef.current = null;
+    }
+  }, [isCanvasConnected]);
+
+  // Update All
+  const isAnyLoading = emailLoading || eventsLoading || assignmentsLoading;
+
+  const handleUpdateAll = useCallback(async () => {
+    if (!isConnected) {
+      toast.error("Please configure Settings first.");
+      setSettingsOpen(true);
+      return;
+    }
+    toast.info("Updating everything…");
+    const promises: Promise<void>[] = [handleGetEmails(), handleFetchEvents()];
+    if (isCanvasConnected) promises.push(handleFetchAssignments());
+    await Promise.allSettled(promises);
+    setLastUpdated(new Date());
+    toast.success("All updated!");
+  }, [handleGetEmails, handleFetchEvents, handleFetchAssignments, isConnected, isCanvasConnected]);
+
+  const handleCancelAll = useCallback(() => {
+    emailAbortRef.current?.abort();
+    eventsAbortRef.current?.abort();
+    assignmentsAbortRef.current?.abort();
+    setEmailLoading(false);
+    setEventsLoading(false);
+    setAssignmentsLoading(false);
+    toast.info("All fetches cancelled.");
+  }, []);
 
   return (
     <div className="flex min-h-screen relative z-10">
-      <aside className="w-56 shrink-0 sticky top-0 h-screen glass-subtle flex flex-col p-4 border-r border-border/50">
-        <div className="flex items-center gap-2.5 px-2 mb-8">
+      <aside className="w-56 shrink-0 sticky top-0 h-screen glass-subtle flex flex-col p-4 border-r border-border/50 overflow-y-auto">
+        <div className="flex items-center gap-2.5 px-2 mb-6">
           <div className="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center">
             <Inbox className="h-4 w-4 text-primary" />
           </div>
           <span className="text-sm font-semibold text-foreground tracking-tight font-display">LockedTFIn</span>
         </div>
+
+        {/* Update All button */}
+        <Button
+          size="sm"
+          onClick={handleUpdateAll}
+          disabled={isAnyLoading}
+          className="gap-1.5 mb-4 w-full"
+        >
+          {isAnyLoading ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Zap className="h-3.5 w-3.5" />
+          )}
+          {isAnyLoading ? "Updating…" : "Update All"}
+        </Button>
+
         <div className="flex-1">
           <ImportanceFunnel emails={emails} />
+          <SidebarAnalytics events={events} assignments={assignments} lastUpdated={lastUpdated} />
         </div>
+
         <button
           onClick={() => setSettingsOpen(true)}
           className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors mt-4 border-t border-border/50 pt-4"
@@ -110,10 +215,10 @@ export default function Index() {
               {today} · {emails.length} important email{emails.length !== 1 ? "s" : ""} today
             </p>
           </div>
-          {loading && (
-            <Button variant="outline" size="sm" onClick={handleCancel} className="gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10">
+          {isAnyLoading && (
+            <Button variant="outline" size="sm" onClick={handleCancelAll} className="gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10">
               <XCircle className="h-3.5 w-3.5" />
-              Cancel
+              Cancel All
             </Button>
           )}
         </header>
@@ -141,8 +246,26 @@ export default function Index() {
             </div>
           ) : (
             <>
-              <CanvasAssignments onOpenSettings={() => setSettingsOpen(true)} />
-              <CalendarEvents />
+              <CanvasAssignments
+                assignments={assignments}
+                loading={assignmentsLoading}
+                hasFetched={assignmentsHasFetched}
+                error={assignmentsError}
+                isConnected={isCanvasConnected}
+                assignmentRange={assignmentRange}
+                onRangeChange={setAssignmentRange}
+                onFetch={handleFetchAssignments}
+                onCancel={() => { assignmentsAbortRef.current?.abort(); setAssignmentsLoading(false); }}
+                onOpenSettings={() => setSettingsOpen(true)}
+              />
+              <CalendarEvents
+                events={events}
+                loading={eventsLoading}
+                hasFetched={eventsHasFetched}
+                error={eventsError}
+                onFetch={handleFetchEvents}
+                onCancel={() => { eventsAbortRef.current?.abort(); setEventsLoading(false); }}
+              />
 
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-sm font-semibold text-foreground font-display">Priority Inbox</h2>
@@ -151,8 +274,7 @@ export default function Index() {
                 </span>
               </div>
 
-              {/* Error state with retry */}
-              {error && !loading && (
+              {emailError && !emailLoading && (
                 <div className="glass rounded-lg p-5 mb-4 border border-destructive/20 animate-fade-in">
                   <div className="flex items-start gap-3">
                     <div className="h-8 w-8 rounded-lg bg-destructive/15 flex items-center justify-center shrink-0">
@@ -160,7 +282,7 @@ export default function Index() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground mb-1">Something went wrong</p>
-                      <p className="text-xs text-muted-foreground mb-3">{error}</p>
+                      <p className="text-xs text-muted-foreground mb-3">{emailError}</p>
                       <Button size="sm" variant="outline" onClick={handleGetEmails} className="gap-1.5">
                         <RefreshCw className="h-3 w-3" />
                         Try again
@@ -170,29 +292,20 @@ export default function Index() {
                 </div>
               )}
 
-              {/* Loading skeletons */}
-              {loading && <EmailSkeleton count={5} />}
+              {emailLoading && <EmailSkeleton count={5} />}
 
-              {/* Empty state — only show if no error */}
-              {!loading && emails.length === 0 && !error && (
+              {!emailLoading && emails.length === 0 && !emailError && (
                 <div className="glass rounded-lg p-12 text-center">
                   <Mail className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
                   <p className="text-sm text-muted-foreground">
-                    {hasFetched
+                    {emailHasFetched
                       ? "No important emails today — you're all caught up!"
-                      : 'Click "Get Emails" to fetch your important emails.'}
+                      : 'Click "Update All" or "Refetch" to fetch your important emails.'}
                   </p>
-                  {!hasFetched && (
-                    <Button onClick={handleGetEmails} disabled={loading} className="gap-2 mt-4">
-                      <RefreshCw className="h-4 w-4" />
-                      Get Emails
-                    </Button>
-                  )}
                 </div>
               )}
 
-              {/* Email list */}
-              {!loading && emails.length > 0 && (
+              {!emailLoading && emails.length > 0 && (
                 <div className="space-y-2">
                   {emails.map((email, i) => (
                     <EmailCard key={email.id} email={email} index={i} />
@@ -200,7 +313,7 @@ export default function Index() {
                 </div>
               )}
 
-              {/* Filters & Refetch — below emails */}
+              {/* Filters & Refetch */}
               <div className="glass rounded-lg p-4 mt-4 animate-fade-in">
                 <div className="flex flex-wrap items-center gap-4">
                   <div className="flex items-center gap-2">
@@ -243,9 +356,9 @@ export default function Index() {
                     </div>
                   </div>
                   <div className="h-4 w-px bg-border/50" />
-                  <Button size="sm" variant="outline" onClick={handleGetEmails} disabled={loading} className="gap-1.5 ml-auto">
-                    <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />
-                    {loading ? "Fetching…" : "Refetch"}
+                  <Button size="sm" variant="outline" onClick={handleGetEmails} disabled={emailLoading} className="gap-1.5 ml-auto">
+                    <RefreshCw className={cn("h-3 w-3", emailLoading && "animate-spin")} />
+                    {emailLoading ? "Fetching…" : "Refetch"}
                   </Button>
                 </div>
               </div>

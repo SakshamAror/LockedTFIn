@@ -1,60 +1,27 @@
-import { useState, useRef, useCallback } from "react";
 import { BookOpen, RefreshCw, Loader2, XCircle, AlertTriangle, Clock, CheckCircle2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { fetchCanvasAssignments, type CanvasAssignment } from "@/lib/browserUseCanvas";
-import { getSettings } from "@/components/SettingsPanel";
-import { toast } from "sonner";
+import type { CanvasAssignment } from "@/lib/browserUseCanvas";
 
-export function CanvasAssignments({ onOpenSettings }: { onOpenSettings: () => void }) {
-  const [assignments, setAssignments] = useState<CanvasAssignment[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [hasFetched, setHasFetched] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const abortRef = useRef<AbortController | null>(null);
+export type AssignmentRange = 1 | 7 | 14;
 
-  const { canvasUsername, canvasPassword, apiKey } = getSettings();
-  const isCanvasConnected = !!(canvasUsername && canvasPassword && apiKey);
+interface CanvasAssignmentsProps {
+  assignments: CanvasAssignment[];
+  loading: boolean;
+  hasFetched: boolean;
+  error: string | null;
+  isConnected: boolean;
+  assignmentRange: AssignmentRange;
+  onRangeChange: (range: AssignmentRange) => void;
+  onFetch: () => void;
+  onCancel: () => void;
+  onOpenSettings: () => void;
+}
 
-  const handleCancel = useCallback(() => {
-    abortRef.current?.abort();
-    setLoading(false);
-    toast.info("Canvas fetch cancelled.");
-  }, []);
-
-  const handleFetch = async () => {
-    if (!isCanvasConnected) {
-      toast.error("Please set your Canvas SSO credentials in Settings first.");
-      onOpenSettings();
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-    abortRef.current = new AbortController();
-    toast.info("Fetching Canvas assignments… A Duo 2FA prompt will appear on your device — please approve it to continue.", { duration: 10000 });
-
-    try {
-      const fetched = await fetchCanvasAssignments(abortRef.current.signal);
-      setAssignments(fetched);
-      setHasFetched(true);
-      if (fetched.length > 0) {
-        toast.success(`Found ${fetched.length} assignment${fetched.length !== 1 ? "s" : ""}.`);
-      } else {
-        toast.info("No assignments found.");
-      }
-    } catch (err: any) {
-      if (err.name === "AbortError") return;
-      const msg = err.message || "Failed to fetch Canvas assignments.";
-      setError(msg);
-      toast.error(msg);
-      setHasFetched(true);
-    } finally {
-      setLoading(false);
-      abortRef.current = null;
-    }
-  };
-
+export function CanvasAssignments({
+  assignments, loading, hasFetched, error, isConnected,
+  assignmentRange, onRangeChange, onFetch, onCancel, onOpenSettings,
+}: CanvasAssignmentsProps) {
   const typeLabel = (type: string) => {
     switch (type) {
       case "quiz": return "Quiz";
@@ -71,7 +38,21 @@ export function CanvasAssignments({ onOpenSettings }: { onOpenSettings: () => vo
     }
   };
 
-  if (!isCanvasConnected) {
+  // Filter assignments by due date range
+  const now = new Date();
+  const cutoff = new Date(now.getTime() + assignmentRange * 86400000);
+  
+  const filteredAssignments = assignments.filter((a) => {
+    if (a.dueDate === "N/A") return assignmentRange === 14; // show undated only in 14d view
+    try {
+      const due = new Date(a.dueDate);
+      return due >= now && due <= cutoff;
+    } catch {
+      return true;
+    }
+  });
+
+  if (!isConnected) {
     return (
       <div className="glass rounded-xl p-5 mb-6 animate-fade-in">
         <div className="flex items-center gap-2 mb-3">
@@ -100,27 +81,42 @@ export function CanvasAssignments({ onOpenSettings }: { onOpenSettings: () => vo
           <h2 className="text-sm font-semibold text-foreground font-display">Canvas Assignments</h2>
         </div>
         <div className="flex items-center gap-2">
+          {/* Assignment range filter */}
+          <div className="flex gap-1">
+            {([1, 7, 14] as AssignmentRange[]).map((range) => (
+              <button
+                key={range}
+                onClick={() => onRangeChange(range)}
+                className={`px-2 py-0.5 rounded-md text-[10px] font-medium transition-all ${
+                  assignmentRange === range
+                    ? "bg-warning/20 text-warning shadow-[0_0_10px_-4px_hsl(var(--warning)/0.4)]"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                }`}
+              >
+                {range === 1 ? "1 day" : `${range} days`}
+              </button>
+            ))}
+          </div>
           {loading && (
-            <Button variant="outline" size="sm" onClick={handleCancel} className="gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10 h-7 text-xs">
+            <Button variant="outline" size="sm" onClick={onCancel} className="gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10 h-7 text-xs">
               <XCircle className="h-3 w-3" />
               Cancel
             </Button>
           )}
-          <Button variant="outline" size="sm" onClick={handleFetch} disabled={loading} className="gap-1.5 h-7 text-xs">
+          <Button variant="outline" size="sm" onClick={onFetch} disabled={loading} className="gap-1.5 h-7 text-xs">
             {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
             {loading ? "Fetching…" : hasFetched ? "Refresh" : "Load Assignments"}
           </Button>
         </div>
       </div>
 
-      {/* Error */}
       {error && !loading && (
         <div className="rounded-lg p-3 mb-3 border border-destructive/20 bg-destructive/5">
           <div className="flex items-start gap-2">
             <AlertTriangle className="h-3.5 w-3.5 text-destructive mt-0.5 shrink-0" />
             <div>
               <p className="text-xs text-muted-foreground">{error}</p>
-              <Button size="sm" variant="ghost" onClick={handleFetch} className="gap-1 h-6 text-xs mt-1 px-2">
+              <Button size="sm" variant="ghost" onClick={onFetch} className="gap-1 h-6 text-xs mt-1 px-2">
                 <RefreshCw className="h-2.5 w-2.5" /> Try again
               </Button>
             </div>
@@ -128,7 +124,6 @@ export function CanvasAssignments({ onOpenSettings }: { onOpenSettings: () => vo
         </div>
       )}
 
-      {/* Loading */}
       {loading && (
         <div className="space-y-2">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -143,17 +138,17 @@ export function CanvasAssignments({ onOpenSettings }: { onOpenSettings: () => vo
         </div>
       )}
 
-      {/* Empty */}
-      {!loading && !error && assignments.length === 0 && (
+      {!loading && !error && filteredAssignments.length === 0 && (
         <p className="text-xs text-muted-foreground text-center py-3">
-          {hasFetched ? "No assignments found." : 'Click "Load Assignments" to fetch from Canvas.'}
+          {hasFetched
+            ? `No assignments due within ${assignmentRange === 1 ? "1 day" : `${assignmentRange} days`}.`
+            : 'Click "Load Assignments" to fetch from Canvas.'}
         </p>
       )}
 
-      {/* Assignment list */}
-      {!loading && assignments.length > 0 && (
+      {!loading && filteredAssignments.length > 0 && (
         <div className="space-y-1.5">
-          {assignments.map((a, i) => (
+          {filteredAssignments.map((a, i) => (
             <a
               key={a.id}
               href={a.url}

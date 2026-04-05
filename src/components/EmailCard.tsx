@@ -65,6 +65,9 @@ export function EmailCard({ email, index }: { email: Email; index: number }) {
             <div className="flex items-center justify-between gap-2 mb-1">
               <span className="text-sm font-semibold text-foreground truncate">{email.sender}</span>
               <div className="flex items-center gap-2 shrink-0">
+                {email.date && (
+                  <span className="text-[10px] text-muted-foreground">{email.date}</span>
+                )}
                 <span className="text-xs text-muted-foreground flex items-center gap-1">
                   <Clock className="h-3 w-3" />
                   {email.time}

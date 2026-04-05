@@ -1,3 +1,50 @@
+
+
+import { useState, useRef, useCallback } from "react"; import { Mail, Inbox, RefreshCw, Loader2, Settings, XCircle, AlertTriangle, Calendar, Hash, GraduationCap, Clock } from "lucide-react"; import { EmailCard } from "@/components/EmailCard"; import { EmailSkeleton } from "@/components/EmailSkeleton
+
+pasted
+
+resolve merge conflicts for me (preferable accept incoming change):
+
+3:37 AM
+
+Untangled nested merge conflicts and reconstructed clean file
+Untangled nested merge conflicts and reconstructed clean file
+Looking through the file, there are nested conflicts (Updated upstream, Aksh_branch, Stashed changes, and main). I'll resolve everything by preferring main, using the correct emailError/emailLoading/emailHasFetched variable names throughout, placing filters before the email list, and replacing the cn() call (which isn't imported) with a template literal for the Refetch button.
+
+
+Created a file, read a file
+Created a file, read a file
+Here's a summary of every conflict resolved and what was chosen:
+
+Outer conflict (order of filters vs email list): Took main — filters come before the email list with mb-4, not after it with mt-4.
+
+Inner conflict (variable names): Took main — uses emailError, emailLoading, and emailHasFetched consistently throughout, discarding the stale error/loading/hasFetched names from Aksh_branch.
+
+Inner conflict (Refetch button): The button existed in Updated upstream but used cn() which isn't imported anywhere in the file. Kept the button since it's clearly useful, but replaced cn("h-3 w-3", emailLoading && "animate-spin") with a plain template literal to avoid a runtime crash.
+
+Empty state: Took main — no "Get Emails" button in the empty state, just the prompt text pointing users to "Update All" or "Refetch".
+
+Index
+Code · TSX 
+give me code as a text file
+
+3:41 AM
+
+Ran a command, read a file
+Ran a command, read a file
+There you go — same code, plain .txt file.
+
+Index
+TXT 
+
+
+
+
+Claude is AI and can make mistakes. Please double-check responses.
+Index · TXT
+Copy
+
 import { useState, useRef, useCallback } from "react";
 import { Mail, Inbox, RefreshCw, Loader2, Settings, XCircle, AlertTriangle, Calendar, Hash, GraduationCap, Clock } from "lucide-react";
 import { EmailCard } from "@/components/EmailCard";
@@ -14,9 +61,8 @@ import { fetchCalendarEvents, type CalendarEvent } from "@/lib/browserUseCalenda
 import { fetchCanvasAssignments, type CanvasAssignment } from "@/lib/browserUseCanvas";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
 import type { Email, TimeRange, EmailCount } from "@/components/EmailCard";
-
+ 
 export default function Index() {
   // Email state
   const [emails, setEmails] = useState<Email[]>([]);
@@ -26,7 +72,7 @@ export default function Index() {
   const [timeRange, setTimeRange] = useState<TimeRange>("today");
   const [emailCount, setEmailCount] = useState<EmailCount>(5);
   const emailAbortRef = useRef<AbortController | null>(null);
-
+ 
   // Calendar state
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [eventsLoading, setEventsLoading] = useState(false);
@@ -34,7 +80,7 @@ export default function Index() {
   const [eventsError, setEventsError] = useState<string | null>(null);
   const [eventRange, setEventRange] = useState<EventRange>(7);
   const eventsAbortRef = useRef<AbortController | null>(null);
-
+ 
   // Canvas state
   const [assignments, setAssignments] = useState<CanvasAssignment[]>([]);
   const [assignmentsLoading, setAssignmentsLoading] = useState(false);
@@ -42,26 +88,26 @@ export default function Index() {
   const [assignmentsError, setAssignmentsError] = useState<string | null>(null);
   const [assignmentRange, setAssignmentRange] = useState<AssignmentRange>(7);
   const assignmentsAbortRef = useRef<AbortController | null>(null);
-
+ 
   // Shared state
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-
+ 
   const { apiKey, email, canvasUsername, canvasPassword } = getSettings();
   const isConnected = !!(apiKey && email);
   const isCanvasConnected = !!(canvasUsername && canvasPassword && apiKey);
-
+ 
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
     month: "long",
     day: "numeric",
   });
-
+ 
   const userName = email?.split("@")[0] || "there";
-
+ 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
-
+ 
   // Email fetch
   const handleGetEmails = useCallback(async () => {
     if (!isConnected) {
@@ -92,7 +138,7 @@ export default function Index() {
       emailAbortRef.current = null;
     }
   }, [isConnected, timeRange, emailCount]);
-
+ 
   // Calendar fetch
   const handleFetchEvents = useCallback(async () => {
     setEventsLoading(true);
@@ -116,7 +162,7 @@ export default function Index() {
       eventsAbortRef.current = null;
     }
   }, [eventRange]);
-
+ 
   // Canvas fetch
   const handleFetchAssignments = useCallback(async () => {
     if (!isCanvasConnected) {
@@ -145,10 +191,10 @@ export default function Index() {
       assignmentsAbortRef.current = null;
     }
   }, [isCanvasConnected, assignmentRange]);
-
+ 
   // Update All
   const isAnyLoading = emailLoading || eventsLoading || assignmentsLoading;
-
+ 
   const handleUpdateAll = useCallback(async () => {
     if (!isConnected) {
       toast.error("Please configure Settings first.");
@@ -162,7 +208,7 @@ export default function Index() {
     setLastUpdated(new Date());
     toast.success("All updated!");
   }, [handleGetEmails, handleFetchEvents, handleFetchAssignments, isConnected, isCanvasConnected]);
-
+ 
   const handleCancelAll = useCallback(() => {
     emailAbortRef.current?.abort();
     eventsAbortRef.current?.abort();
@@ -172,7 +218,7 @@ export default function Index() {
     setAssignmentsLoading(false);
     toast.info("All fetches cancelled.");
   }, []);
-
+ 
   return (
     <div className="flex min-h-screen relative z-10">
       <aside className="w-56 shrink-0 sticky top-0 h-screen glass-subtle flex flex-col p-4 border-r border-border/50 overflow-y-auto">
@@ -182,7 +228,7 @@ export default function Index() {
           </div>
           <span className="text-sm font-semibold text-foreground tracking-tight font-display">LockedTFIn</span>
         </div>
-
+ 
         {/* Update All button */}
         <Button
           size="sm"
@@ -195,12 +241,12 @@ export default function Index() {
           ) : null}
           {isAnyLoading ? "Updating…" : "Update All"}
         </Button>
-
+ 
         <div className="flex-1">
           <ImportanceFunnel emails={emails} />
           <SidebarAnalytics events={events} assignments={assignments} lastUpdated={lastUpdated} />
         </div>
-
+ 
         <button
           onClick={() => setSettingsOpen(true)}
           className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors mt-4 border-t border-border/50 pt-4"
@@ -209,7 +255,7 @@ export default function Index() {
           <span>Settings</span>
         </button>
       </aside>
-
+ 
       <main className="flex-1 flex flex-col h-screen overflow-hidden">
         <header className="glass-subtle rounded-none border-x-0 border-t-0 flex items-center justify-between px-8 py-4 shrink-0">
           <div className="flex flex-col gap-1">
@@ -227,7 +273,7 @@ export default function Index() {
               )}
             </div>
           </div>
-
+ 
           <div className="flex items-center gap-3">
             {/* Status pills */}
             <div className="flex items-center gap-1.5">
@@ -250,7 +296,7 @@ export default function Index() {
                 </span>
               )}
             </div>
-
+ 
             {isAnyLoading && (
               <>
                 <div className="h-4 w-px bg-border/50" />
@@ -262,7 +308,7 @@ export default function Index() {
             )}
           </div>
         </header>
-
+ 
         <div className="flex-1 overflow-auto p-8">
           {!isConnected ? (
             <div className="glass rounded-xl p-10 text-center max-w-lg mx-auto mt-12">
@@ -289,7 +335,7 @@ export default function Index() {
               {(eventsHasFetched || assignmentsHasFetched) && (
                 <TimelineChart events={events} assignments={assignments} />
               )}
-
+ 
               <CanvasAssignments
                 assignments={assignments}
                 loading={assignmentsLoading}
@@ -312,14 +358,7 @@ export default function Index() {
                 onFetch={handleFetchEvents}
                 onCancel={() => { eventsAbortRef.current?.abort(); setEventsLoading(false); }}
               />
-
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-sm font-semibold text-foreground font-display">Priority Inbox</h2>
-                <span className="text-xs text-muted-foreground">
-                  {emails.length > 0 ? "Click an email to expand" : "Ranked by importance"}
-                </span>
-              </div>
-
+ 
               {/* Filters & Refetch */}
               <div className="glass rounded-lg p-4 mb-4 animate-fade-in">
                 <div className="flex flex-wrap items-center gap-4">
@@ -364,12 +403,19 @@ export default function Index() {
                   </div>
                   <div className="h-4 w-px bg-border/50" />
                   <Button size="sm" variant="outline" onClick={handleGetEmails} disabled={emailLoading} className="gap-1.5 ml-auto">
-                    <RefreshCw className={cn("h-3 w-3", emailLoading && "animate-spin")} />
+                    <RefreshCw className={`h-3 w-3 ${emailLoading ? "animate-spin" : ""}`} />
                     {emailLoading ? "Fetching…" : "Refetch"}
                   </Button>
                 </div>
               </div>
-
+ 
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-sm font-semibold text-foreground font-display">Priority Inbox</h2>
+                <span className="text-xs text-muted-foreground">
+                  {emails.length > 0 ? "Click an email to expand" : "Ranked by importance"}
+                </span>
+              </div>
+ 
               {emailError && !emailLoading && (
                 <div className="glass rounded-lg p-5 mb-4 border border-destructive/20 animate-fade-in">
                   <div className="flex items-start gap-3">
@@ -387,9 +433,9 @@ export default function Index() {
                   </div>
                 </div>
               )}
-
+ 
               {emailLoading && <EmailSkeleton count={5} />}
-
+ 
               {!emailLoading && emails.length === 0 && !emailError && (
                 <div className="glass rounded-lg p-12 text-center">
                   <Mail className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
@@ -400,7 +446,7 @@ export default function Index() {
                   </p>
                 </div>
               )}
-
+ 
               {!emailLoading && emails.length > 0 && (
                 <div className="space-y-2">
                   {emails.map((email, i) => (
@@ -412,7 +458,7 @@ export default function Index() {
           )}
         </div>
       </main>
-
+ 
       <SettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} />
       <ChatBubble />
     </div>

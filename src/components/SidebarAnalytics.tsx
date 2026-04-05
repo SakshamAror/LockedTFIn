@@ -23,7 +23,7 @@ export function SidebarAnalytics({ events, assignments, lastUpdated }: SidebarAn
 
   return (
     <div className="space-y-3 mt-4">
-      <h3 className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider font-display px-1">
+      <h3 className="text-[10px] font-mono font-medium text-muted-foreground uppercase tracking-wider px-1">
         At a Glance
       </h3>
 
@@ -31,17 +31,17 @@ export function SidebarAnalytics({ events, assignments, lastUpdated }: SidebarAn
       <div className="glass rounded-lg p-3">
         <div className="flex items-center gap-2 mb-1.5">
           <Calendar className="h-3 w-3 text-primary" />
-          <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Next Event</span>
+          <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider font-medium">Next Event</span>
         </div>
         {nextEvent ? (
           <div>
-            <p className="text-xs font-medium text-foreground truncate">{nextEvent.summary}</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">
+            <p className="text-xs font-mono font-medium text-foreground truncate">{nextEvent.summary}</p>
+            <p className="text-[10px] font-mono text-muted-foreground mt-0.5">
               {nextEvent.date} · {nextEvent.time}
             </p>
           </div>
         ) : (
-          <p className="text-[10px] text-muted-foreground italic">No upcoming events</p>
+          <p className="text-[10px] font-mono text-muted-foreground italic">No upcoming events</p>
         )}
       </div>
 
@@ -49,17 +49,17 @@ export function SidebarAnalytics({ events, assignments, lastUpdated }: SidebarAn
       <div className="glass rounded-lg p-3">
         <div className="flex items-center gap-2 mb-1.5">
           <BookOpen className="h-3 w-3 text-warning" />
-          <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Next Due</span>
+          <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider font-medium">Next Due</span>
         </div>
         {nextAssignment ? (
           <div>
-            <p className="text-xs font-medium text-foreground truncate">{nextAssignment.title}</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
+            <p className="text-xs font-mono font-medium text-foreground truncate">{nextAssignment.title}</p>
+            <p className="text-[10px] font-mono text-muted-foreground mt-0.5 truncate">
               {nextAssignment.course} · {nextAssignment.dueDate}
             </p>
           </div>
         ) : (
-          <p className="text-[10px] text-muted-foreground italic">No upcoming assignments</p>
+          <p className="text-[10px] font-mono text-muted-foreground italic">No upcoming assignments</p>
         )}
       </div>
 
@@ -67,9 +67,9 @@ export function SidebarAnalytics({ events, assignments, lastUpdated }: SidebarAn
       <div className="glass rounded-lg p-3">
         <div className="flex items-center gap-2 mb-1.5">
           <Clock className="h-3 w-3 text-muted-foreground" />
-          <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Last Updated</span>
+          <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider font-medium">Last Updated</span>
         </div>
-        <p className={cn("text-xs font-medium", lastUpdated ? "text-foreground" : "text-muted-foreground italic")}>
+        <p className={cn("text-xs font-mono font-medium", lastUpdated ? "text-foreground" : "text-muted-foreground italic")}>
           {lastUpdated ? formatTimeAgo(lastUpdated) : "Not yet"}
         </p>
       </div>

@@ -183,13 +183,11 @@ export default function Index() {
           size="sm"
           onClick={handleUpdateAll}
           disabled={isAnyLoading}
-          className="gap-1.5 mb-4 w-full"
+          className="gap-1.5 mb-4 w-full font-mono"
         >
           {isAnyLoading ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          ) : (
-            <Zap className="h-3.5 w-3.5" />
-          )}
+          ) : null}
           {isAnyLoading ? "Updating…" : "Update All"}
         </Button>
 

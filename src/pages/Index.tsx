@@ -137,6 +137,7 @@ export default function Index() {
               </Button>
             </div>
           ) : (
+            <>
               <CanvasAssignments onOpenSettings={() => setSettingsOpen(true)} />
               <CalendarEvents />
 

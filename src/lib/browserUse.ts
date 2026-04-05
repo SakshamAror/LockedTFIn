@@ -22,7 +22,7 @@ interface GmailMessage {
   labelIds?: string[];
 }
 
-export async function fetchEmails(signal?: AbortSignal): Promise<Email[]> {
+export async function fetchEmails(signal?: AbortSignal, timeRange: "today" | "week" | "month" = "today", count: 5 | 10 | 30 = 5): Promise<Email[]> {
   const { apiKey, email } = getSettings();
 
   if (!apiKey || !email) {

@@ -177,3 +177,104 @@ After creating all events, return the number of events successfully created as a
 
   throw new Error("Push to calendar timed out after 10 minutes.");
 }
+
+// ── Push assignments to Google Calendar ───────────────────────────────────────
+
+export interface PushableAssignment {
+  title: string;
+  course: string;
+  dueDate: string;
+  points: string;
+  url: string;
+  source: "canvas" | "gradescope";
+  type?: string; // canvas type: assignment/quiz/discussion_topic
+}
+
+function assignmentColor(a: PushableAssignment): string {
+  if (a.source === "gradescope") return "Sage";       // green
+  switch (a.type) {
+    case "quiz": return "Banana";                      // yellow
+    case "discussion_topic": return "Peacock";         // cyan
+    default: return "Blueberry";                       // blue
+  }
+}
+
+export async function pushAssignmentsToCalendar(
+  assignments: PushableAssignment[],
+  signal?: AbortSignal
+): Promise<number> {
+  const { apiKey, email } = getSettings();
+  if (!apiKey || !email) throw new Error("Please configure your API key and email in Settings first.");
+  if (assignments.length === 0) throw new Error("No assignments to add.");
+
+  const lines = assignments.map((a) => {
+    const color = assignmentColor(a);
+    const desc = `Course: ${a.course}${a.points !== "N/A" ? ` | Points: ${a.points}` : ""}${a.url ? ` | URL: ${a.url}` : ""}`;
+    return `- "${a.title}" | Due: ${a.dueDate} | Description: "${desc}" | Color: ${color}`;
+  });
+
+  const task = `
+Open Google Calendar for the account ${email} from composio connections.
+
+Add the following assignment deadlines as calendar events. For each, create a 1-hour event ending at the due time (or an all-day event if no time is given). Apply the specified Color.
+
+ASSIGNMENTS (${assignments.length} total):
+${lines.join("\n")}
+
+Color reference:
+- Blueberry = dark blue (Canvas assignments)
+- Banana = yellow (Canvas quizzes)
+- Peacock = teal (Canvas discussions)
+- Sage = green (Gradescope)
+
+After creating all events, return the number of events successfully created as a plain integer.
+`;
+
+  const createRes = await fetch(`${BASE_URL}/sessions`, {
+    method: "POST",
+    headers: { "X-Browser-Use-API-Key": apiKey, "Content-Type": "application/json" },
+    body: JSON.stringify({ task }),
+    signal,
+  });
+
+  if (!createRes.ok) {
+    const status = createRes.status;
+    if (status === 401 || status === 403) throw new Error("Invalid Browser Use API key.");
+    if (status === 429) throw new Error("Rate limited. Please wait and try again.");
+    throw new Error(`Failed to create session (HTTP ${status}).`);
+  }
+
+  const session: BrowserUseSession = await createRes.json();
+  if (!session.id) throw new Error("No session ID returned from Browser Use.");
+
+  const start = Date.now();
+  while (Date.now() - start < TIMEOUT_MS) {
+    signal?.throwIfAborted();
+    await new Promise((r) => setTimeout(r, POLL_INTERVAL));
+
+    const pollRes = await fetch(`${BASE_URL}/sessions/${session.id}`, {
+      headers: { "X-Browser-Use-API-Key": apiKey },
+      signal,
+    });
+    if (!pollRes.ok) throw new Error(`Poll failed (HTTP ${pollRes.status}).`);
+
+    const result: BrowserUseSession = await pollRes.json();
+
+    if (result.status === "timed_out") throw new Error("Timed out while adding assignment events.");
+    if (result.status === "error" || result.isTaskSuccessful === false)
+      throw new Error(result.lastStepSummary || "Could not add assignments to Google Calendar.");
+
+    if (
+      result.output !== null &&
+      result.output !== undefined &&
+      !(typeof result.output === "string" && result.output.trim() === "")
+    ) {
+      const n = parseInt(String(result.output).trim(), 10);
+      return isNaN(n) ? assignments.length : n;
+    }
+
+    if (result.status === "stopped") return 0;
+  }
+
+  throw new Error("Push assignments timed out after 10 minutes.");
+}

@@ -9,7 +9,7 @@ import { ChatBubble } from "@/components/ChatBubble";
 import { CalendarEvents, type EventRange } from "@/components/CalendarEvents";
 import { TimelineChart } from "@/components/TimelineChart";
 import { CanvasAssignments, type AssignmentRange } from "@/components/CanvasAssignments";
-import { WebRegSchedule, type TermCode } from "@/components/WebRegSchedule";
+import { WebRegSchedule } from "@/components/WebRegSchedule";
 import { SettingsPanel, getSettings } from "@/components/SettingsPanel";
 import { fetchEmails } from "@/lib/browserUse";
 import { fetchCalendarEvents, type CalendarEvent } from "@/lib/browserUseCalendar";
@@ -58,10 +58,13 @@ export default function Index() {
   const [webRegLoading, setWebRegLoading] = useState(false);
   const [webRegHasFetched, setWebRegHasFetched] = useState(false);
   const [webRegError, setWebRegError] = useState<string | null>(null);
-  const [webRegTerm, setWebRegTerm] = useState<TermCode>("SP26");
   const webRegAbortRef = useRef<AbortController | null>(null);
   const [webRegPushLoading, setWebRegPushLoading] = useState(false);
   const webRegPushAbortRef = useRef<AbortController | null>(null);
+
+  // Assignments push state
+  const [assignmentsPushLoading, setAssignmentsPushLoading] = useState(false);
+  const assignmentsPushAbortRef = useRef<AbortController | null>(null);
 
   // Shared state
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -81,6 +84,18 @@ export default function Index() {
  
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+
+  // Auto-detect current UCSD quarter
+  const currentTermCode = (() => {
+    const m = new Date().getMonth() + 1; // 1–12
+    const y = new Date().getFullYear().toString().slice(-2);
+    if (m >= 9 && m <= 12) return `FA${y}`;
+    if (m >= 1 && m <= 3) return `WI${y}`;
+    return `SP${y}`;
+  })();
+  const currentTermLabel: Record<string, string> = {
+    FA25: "Fall 2025", WI26: "Winter 2026", SP26: "Spring 2026", FA26: "Fall 2026",
+  };
  
   // Email fetch
   const handleGetEmails = useCallback(async () => {
@@ -207,7 +222,7 @@ export default function Index() {
     webRegAbortRef.current = new AbortController();
     toast.info("Fetching WebReg schedule… Approve Duo 2FA on your device.", { duration: 10000 });
     try {
-      const fetched = await fetchWebRegSchedule(webRegAbortRef.current.signal, webRegTerm);
+      const fetched = await fetchWebRegSchedule(webRegAbortRef.current.signal, currentTermCode);
       setWebRegCourses(fetched);
       setWebRegHasFetched(true);
       if (fetched.length > 0) toast.success(`Found ${fetched.length} class section${fetched.length !== 1 ? "s" : ""}.`);
@@ -222,7 +237,7 @@ export default function Index() {
       setWebRegLoading(false);
       webRegAbortRef.current = null;
     }
-  }, [isCanvasConnected, webRegTerm]);
+  }, [isCanvasConnected, currentTermCode]);
 
   // WebReg push to calendar
   const handlePushWebRegToCalendar = useCallback(async () => {
@@ -233,7 +248,7 @@ export default function Index() {
     }
     setWebRegPushLoading(true);
     webRegPushAbortRef.current = new AbortController();
-    const termLabel = { FA25: "Fall 2025", WI26: "Winter 2026", SP26: "Spring 2026", FA26: "Fall 2026" }[webRegTerm] ?? webRegTerm;
+    const termLabel = currentTermLabel[currentTermCode] ?? currentTermCode;
     toast.info(`Adding ${webRegCourses.length} class sections to Google Calendar…`, { duration: 12000 });
     try {
       const { pushCoursesToCalendar } = await import("@/lib/browserUsePushToCalendar");
@@ -246,7 +261,34 @@ export default function Index() {
       setWebRegPushLoading(false);
       webRegPushAbortRef.current = null;
     }
-  }, [isConnected, webRegCourses, webRegTerm]);
+  }, [isConnected, webRegCourses, currentTermCode, currentTermLabel]);
+
+  // Assignments push to calendar
+  const handlePushAssignmentsToCalendar = useCallback(async () => {
+    if (!isConnected) {
+      toast.error("Please configure your API key and email in Setup first.");
+      setSettingsOpen(true);
+      return;
+    }
+    setAssignmentsPushLoading(true);
+    assignmentsPushAbortRef.current = new AbortController();
+    toast.info("Adding assignments to Google Calendar…", { duration: 12000 });
+    try {
+      const { pushAssignmentsToCalendar } = await import("@/lib/browserUsePushToCalendar");
+      const allAssignments = [
+        ...assignments.map((a: CanvasAssignment) => ({ ...a, source: "canvas" as const })),
+        ...gsAssignments,
+      ];
+      const added = await pushAssignmentsToCalendar(allAssignments, assignmentsPushAbortRef.current.signal);
+      toast.success(`Added ${added} assignment${added !== 1 ? "s" : ""} to Google Calendar!`);
+    } catch (err: any) {
+      if (err.name === "AbortError") return;
+      toast.error(err.message || "Failed to push assignments to calendar.");
+    } finally {
+      setAssignmentsPushLoading(false);
+      assignmentsPushAbortRef.current = null;
+    }
+  }, [isConnected, assignments, gsAssignments]);
 
   // Update All
   const isAnyLoading = emailLoading || eventsLoading || assignmentsLoading || gsLoading || webRegLoading;
@@ -426,6 +468,8 @@ export default function Index() {
                 onCancel={() => { assignmentsAbortRef.current?.abort(); setAssignmentsLoading(false); }}
                 onCancelGradescope={() => { gsAbortRef.current?.abort(); setGsLoading(false); }}
                 onOpenSettings={() => setSettingsOpen(true)}
+                onPushToCalendar={handlePushAssignmentsToCalendar}
+                pushLoading={assignmentsPushLoading}
               />
               <CalendarEvents
                 events={events}
@@ -443,8 +487,6 @@ export default function Index() {
                 loading={webRegLoading}
                 hasFetched={webRegHasFetched}
                 error={webRegError}
-                termCode={webRegTerm}
-                onTermChange={setWebRegTerm}
                 onFetch={handleFetchWebReg}
                 onCancel={() => { webRegAbortRef.current?.abort(); setWebRegLoading(false); }}
                 onPushToCalendar={handlePushWebRegToCalendar}

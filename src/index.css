@@ -87,15 +87,18 @@
 @layer utilities {
   .glass {
     position: relative;
-    background: hsla(225, 20%, 12%, 0.55);
+    background: hsla(225, 20%, 12%, 0.45);
     backdrop-filter: blur(28px) saturate(1.4);
     border: 1px solid hsla(225, 15%, 30%, 0.25);
-    border-top: 1px solid hsla(225, 15%, 75%, 0.5);
+    border-top: 1px solid hsla(195, 60%, 75%, 0.5);
+    border-left: 1px solid hsla(220, 40%, 70%, 0.2);
     box-shadow:
       0 8px 32px -4px rgba(0, 0, 0, 0.4),
-      0 0 50px -10px hsla(0, 0%, 100%, 0.1),
-      inset 0 1px 0 hsla(0, 0%, 100%, 0.15),
-      inset 0 2px 4px hsla(0, 0%, 100%, 0.05);
+      0 0 60px -8px hsla(200, 60%, 70%, 0.12),
+      0 0 120px -20px hsla(280, 40%, 60%, 0.08),
+      inset 0 1px 0 hsla(195, 80%, 85%, 0.25),
+      inset 0 -1px 0 hsla(260, 40%, 60%, 0.08),
+      inset 0 2px 8px hsla(195, 60%, 80%, 0.06);
   }
 
   .glass::before {
@@ -103,16 +106,30 @@
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.09'/%3E%3C/svg%3E");
-    background-repeat: repeat;
-    background-size: 128px 128px;
+    background:
+      linear-gradient(135deg, hsla(195, 70%, 80%, 0.08) 0%, transparent 40%, transparent 60%, hsla(280, 50%, 65%, 0.05) 100%),
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.09'/%3E%3C/svg%3E");
+    background-size: 100% 100%, 128px 128px;
+    background-repeat: no-repeat, repeat;
     pointer-events: none;
     z-index: 0;
   }
 
+  .glass::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 10%;
+    right: 10%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, hsla(195, 80%, 85%, 0.5), hsla(220, 70%, 80%, 0.3), transparent);
+    border-radius: 50%;
+    z-index: 1;
+  }
+
   .glass > * {
     position: relative;
-    z-index: 1;
+    z-index: 2;
   }
 
   .glass-subtle {
@@ -120,12 +137,14 @@
     background: hsla(225, 20%, 10%, 0.5);
     backdrop-filter: blur(20px) saturate(1.2);
     border: 1px solid hsla(225, 15%, 28%, 0.25);
-    border-top: 1px solid hsla(225, 15%, 70%, 0.45);
+    border-top: 1px solid hsla(195, 50%, 70%, 0.45);
+    border-left: 1px solid hsla(220, 35%, 65%, 0.15);
     box-shadow:
       0 4px 24px -2px rgba(0, 0, 0, 0.35),
-      0 0 40px -8px hsla(0, 0%, 100%, 0.08),
-      inset 0 1px 0 hsla(0, 0%, 100%, 0.12),
-      inset 0 2px 3px hsla(0, 0%, 100%, 0.04);
+      0 0 50px -10px hsla(200, 50%, 65%, 0.08),
+      0 0 80px -15px hsla(270, 35%, 55%, 0.06),
+      inset 0 1px 0 hsla(195, 70%, 80%, 0.2),
+      inset 0 2px 6px hsla(195, 50%, 75%, 0.04);
   }
 
   .glass-subtle::before {
@@ -133,16 +152,30 @@
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E");
-    background-repeat: repeat;
-    background-size: 128px 128px;
+    background:
+      linear-gradient(135deg, hsla(195, 60%, 75%, 0.05) 0%, transparent 50%, hsla(270, 40%, 60%, 0.03) 100%),
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E");
+    background-size: 100% 100%, 128px 128px;
+    background-repeat: no-repeat, repeat;
     pointer-events: none;
     z-index: 0;
   }
 
+  .glass-subtle::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 15%;
+    right: 15%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, hsla(195, 70%, 80%, 0.35), hsla(220, 60%, 75%, 0.2), transparent);
+    border-radius: 50%;
+    z-index: 1;
+  }
+
   .glass-subtle > * {
     position: relative;
-    z-index: 1;
+    z-index: 2;
   }
 
   .glass-highlight {

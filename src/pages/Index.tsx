@@ -137,7 +137,7 @@ export default function Index() {
               </Button>
             </div>
           ) : (
-            <>
+              <CanvasAssignments onOpenSettings={() => setSettingsOpen(true)} />
               <CalendarEvents />
 
               <div className="flex items-center justify-between mb-4">

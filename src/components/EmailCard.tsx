@@ -9,10 +9,14 @@ export interface Email {
   subject: string;
   preview: string;
   time: string;
+  date: string;
   importance: "critical" | "high" | "medium";
   unread: boolean;
   category: string;
 }
+
+export type TimeRange = "today" | "week" | "month";
+export type EmailCount = 5 | 10 | 30;
 
 const importanceConfig = {
   critical: {

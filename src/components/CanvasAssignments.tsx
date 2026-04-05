@@ -181,7 +181,7 @@ export function CanvasAssignments({
           </Button>
           <Button size="sm" onClick={onPushToCalendar}
             disabled={isAnyLoading || pushLoading || filteredAssignments.length === 0}
-            className="gap-1.5 h-7 text-xs bg-indigo-600 hover:bg-indigo-500 text-white border-0 disabled:opacity-40">
+            className="gap-1.5 h-7 text-xs bg-indigo-600 hover:bg-indigo-500 text-white border-0 disabled:opacity-50 disabled:cursor-not-allowed">
             {pushLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <CalendarPlus className="h-3 w-3" />}
             {pushLoading ? "Adding…" : "Add to Calendar"}
           </Button>

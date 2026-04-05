@@ -471,16 +471,6 @@ export default function Index() {
                 onPushToCalendar={handlePushAssignmentsToCalendar}
                 pushLoading={assignmentsPushLoading}
               />
-              <CalendarEvents
-                events={events}
-                loading={eventsLoading}
-                hasFetched={eventsHasFetched}
-                error={eventsError}
-                eventRange={eventRange}
-                onRangeChange={setEventRange}
-                onFetch={handleFetchEvents}
-                onCancel={() => { eventsAbortRef.current?.abort(); setEventsLoading(false); }}
-              />
 
               <WebRegSchedule
                 courses={webRegCourses}
@@ -491,6 +481,17 @@ export default function Index() {
                 onCancel={() => { webRegAbortRef.current?.abort(); setWebRegLoading(false); }}
                 onPushToCalendar={handlePushWebRegToCalendar}
                 pushLoading={webRegPushLoading}
+              />
+
+              <CalendarEvents
+                events={events}
+                loading={eventsLoading}
+                hasFetched={eventsHasFetched}
+                error={eventsError}
+                eventRange={eventRange}
+                onRangeChange={setEventRange}
+                onFetch={handleFetchEvents}
+                onCancel={() => { eventsAbortRef.current?.abort(); setEventsLoading(false); }}
               />
 
               {/* Filters & Refetch */}

@@ -16,6 +16,7 @@ import { fetchCalendarEvents, type CalendarEvent } from "@/lib/browserUseCalenda
 import { fetchCanvasAssignments, type CanvasAssignment } from "@/lib/browserUseCanvas";
 import { fetchGradescopeAssignments, type GradescopeAssignment } from "@/lib/browserUseGradescope";
 import { fetchWebRegSchedule, type WebRegCourse } from "@/lib/browserUseWebReg";
+import { pushCoursesToCalendar, pushAssignmentsToCalendar, type PushableAssignment } from "@/lib/browserUsePushToCalendar";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import type { Email, TimeRange, EmailCount } from "@/components/EmailCard";
@@ -59,6 +60,10 @@ export default function Index() {
   const [webRegHasFetched, setWebRegHasFetched] = useState(false);
   const [webRegError, setWebRegError] = useState<string | null>(null);
   const webRegAbortRef = useRef<AbortController | null>(null);
+
+  // Push to calendar state
+  const [pushLoading, setPushLoading] = useState(false);
+  const pushAbortRef = useRef<AbortController | null>(null);
 
   // Shared state
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -232,6 +237,78 @@ export default function Index() {
       webRegAbortRef.current = null;
     }
   }, [isCanvasConnected, currentTermCode]);
+
+  // Push to Calendar
+  const handlePushCoursesToCalendar = useCallback(async () => {
+    if (webRegCourses.length === 0) {
+      toast.error("No courses to add. Load your WebReg schedule first.");
+      return;
+    }
+    setPushLoading(true);
+    pushAbortRef.current = new AbortController();
+    try {
+      const result = await pushCoursesToCalendar(webRegCourses, currentTermLabel[currentTermCode] || currentTermCode, pushAbortRef.current.signal);
+      if (result.created > 0) {
+        toast.success(`Added ${result.created} calendar event${result.created !== 1 ? "s" : ""}.`);
+      }
+      if (result.failed > 0) {
+        toast.error(`Failed to add ${result.failed} event${result.failed !== 1 ? "s" : ""}. ${result.errors[0] || ""}`);
+      }
+    } catch (err: any) {
+      if (err.name === "AbortError") return;
+      const msg = err.message || "Failed to push courses to calendar.";
+      toast.error(msg);
+    } finally {
+      setPushLoading(false);
+      pushAbortRef.current = null;
+    }
+  }, [webRegCourses, currentTermCode, currentTermLabel]);
+
+  const handlePushAssignmentsToCalendar = useCallback(async () => {
+    if (assignments.length === 0 && gsAssignments.length === 0) {
+      toast.error("No assignments to add. Fetch assignments first.");
+      return;
+    }
+    setPushLoading(true);
+    pushAbortRef.current = new AbortController();
+    try {
+      // Convert Canvas and Gradescope assignments to PushableAssignment format
+      const pushableAssignments: PushableAssignment[] = [
+        ...assignments.map((a) => ({
+          title: a.title,
+          course: a.course,
+          dueDate: a.dueDate,
+          points: a.points ?? "N/A",
+          url: a.url,
+          source: "canvas" as const,
+          type: a.type,
+        })),
+        ...gsAssignments.map((a) => ({
+          title: a.title,
+          course: a.course,
+          dueDate: a.dueDate,
+          points: a.points ?? "N/A",
+          url: a.url,
+          source: "gradescope" as const,
+        })),
+      ];
+
+      const result = await pushAssignmentsToCalendar(pushableAssignments, pushAbortRef.current.signal);
+      if (result.created > 0) {
+        toast.success(`Added ${result.created} assignment deadline${result.created !== 1 ? "s" : ""}.`);
+      }
+      if (result.failed > 0) {
+        toast.error(`Failed to add ${result.failed} deadline${result.failed !== 1 ? "s" : ""}. ${result.errors[0] || ""}`);
+      }
+    } catch (err: any) {
+      if (err.name === "AbortError") return;
+      const msg = err.message || "Failed to push assignments to calendar.";
+      toast.error(msg);
+    } finally {
+      setPushLoading(false);
+      pushAbortRef.current = null;
+    }
+  }, [assignments, gsAssignments]);
 
   // WebReg push to calendar
 
@@ -413,6 +490,8 @@ export default function Index() {
                 onCancel={() => { assignmentsAbortRef.current?.abort(); setAssignmentsLoading(false); }}
                 onCancelGradescope={() => { gsAbortRef.current?.abort(); setGsLoading(false); }}
                 onOpenSettings={() => setSettingsOpen(true)}
+                onPushToCalendar={handlePushAssignmentsToCalendar}
+                pushLoading={pushLoading}
               />
 
               <WebRegSchedule
@@ -422,6 +501,8 @@ export default function Index() {
                 error={webRegError}
                 onFetch={handleFetchWebReg}
                 onCancel={() => { webRegAbortRef.current?.abort(); setWebRegLoading(false); }}
+                onPushToCalendar={handlePushCoursesToCalendar}
+                pushLoading={pushLoading}
               />
 
               <CalendarEvents

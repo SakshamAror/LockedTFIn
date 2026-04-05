@@ -3,16 +3,20 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { CalendarEvent } from "@/lib/browserUseCalendar";
 
+export type EventRange = 1 | 7 | 14;
+
 interface CalendarEventsProps {
   events: CalendarEvent[];
   loading: boolean;
   hasFetched: boolean;
   error: string | null;
+  eventRange: EventRange;
+  onRangeChange: (range: EventRange) => void;
   onFetch: () => void;
   onCancel: () => void;
 }
 
-export function CalendarEvents({ events, loading, hasFetched, error, onFetch, onCancel }: CalendarEventsProps) {
+export function CalendarEvents({ events, loading, hasFetched, error, eventRange, onRangeChange, onFetch, onCancel }: CalendarEventsProps) {
   return (
     <div className="glass rounded-xl p-5 mb-6 animate-fade-in">
       <div className="flex items-center justify-between mb-4">

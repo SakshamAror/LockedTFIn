@@ -4,15 +4,17 @@ const BASE_URL = "https://api.browser-use.com/api/v3";
 const TIMEOUT_MS = 10 * 60 * 1000; // 10 min (SSO + Duo can be slow)
 const POLL_INTERVAL = 5000;
 const DUO_DEVICE_PROMPT_INSTRUCTIONS = [
-  '- If the URL contains "duo" or "duosecurity", the user is approving the Duo push on their phone. Stay on that page and re-check the page and any visible iframes every second for up to 180 seconds.',
-  '- Do NOT stop the session or wait for more user input once the Duo push is approved.',
-  '- As soon as a page appears with the heading "Is this your device?" or a large button that says "Yes, this is my device", treat it as an action page, not a waiting page.',
-  '- On that page, NEVER click "Yes, this is my device", "Yes", "Yes, trust", or any trust-browser button.',
-  '- The correct action is to click the smaller secondary link with the exact text "No, other people use this device".',
-  '- That control may be a hyperlink rather than a button and it may be inside an iframe. Inspect the main page and every visible iframe for the exact text "No, other people use this device" and click it immediately.',
-  '- If the exact text is not clickable on the first try, scroll it into view and retry up to 3 times before doing anything else.',
-  '- If the exact text is not found, click the smaller secondary text link directly underneath the large "Yes, this is my device" button that contains the phrase "other people use this device".',
-  '- After clicking the "No, other people use this device" link, continue the login flow until the real Canvas page is fully loaded.',
+  "- After submitting SSO credentials, a Duo 2FA page will appear. Wait on that page — the user will approve the Duo push on their phone. Poll the page every second for up to 180 seconds until the push is approved.",
+  "- Do NOT stop the session or ask for user input during Duo approval.",
+  "",
+  '=== CRITICAL: "Is this your device?" PAGE ===',
+  '- After Duo approval, a page titled "Is this your device?" (or similar) will appear with a large primary button "Yes, this is my device".',
+  '- You MUST ALWAYS click the smaller secondary link "No, other people use this device" — NEVER the primary "Yes" button.',
+  "- This link may appear as a plain hyperlink (not a button) and may be inside an iframe.",
+  '- IMMEDIATELY upon seeing this page: scan the main document and ALL iframes for an element whose text contains "other people use this device" and click it.',
+  "- If the click does not register on the first attempt, scroll the element into view and retry up to 5 times.",
+  '- Do NOT proceed past this page by any other means. Clicking "Yes, this is my device" is forbidden.',
+  '- After clicking "No, other people use this device", continue the login flow until Canvas is fully loaded.',
 ].join("\n");
 
 export interface CanvasAssignment {

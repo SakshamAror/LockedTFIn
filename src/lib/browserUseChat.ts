@@ -14,17 +14,14 @@ interface BrowserUseSession {
 
 let activeSessionId: string | null = null;
 
-export async function runChatTask(
-  userMessage: string,
-  signal?: AbortSignal
-): Promise<string> {
+export async function runChatTask(userMessage: string, signal?: AbortSignal): Promise<string> {
   const { apiKey } = getSettings();
 
   if (!apiKey) {
     throw new Error("Please configure your API key in Settings first.");
   }
 
-  const task = `Using composio connections, ${userMessage}`;
+  const task = `Using composio connections, ${userMessage}. Print out the information in a clean, readable way utilizing text art properly. If you encounter errors or limitations executing the command, just respond with "I can't help you with this functionality yet".`;
 
   const createRes = await fetch(`${BASE_URL}/sessions`, {
     method: "POST",

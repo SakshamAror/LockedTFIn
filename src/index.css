@@ -64,12 +64,21 @@
 
   body {
     @apply text-foreground font-sans antialiased;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-family: 'Inter', sans-serif;
     background-image: url('/images/wallpaper.jpg');
-    background-size: cover;
+    background-size: 110%;
     background-position: center;
     background-attachment: fixed;
     background-repeat: no-repeat;
+    animation: bg-drift 30s ease-in-out infinite alternate;
+  }
+
+  @keyframes bg-drift {
+    0% { background-position: 30% 30%; }
+    25% { background-position: 70% 40%; }
+    50% { background-position: 50% 70%; }
+    75% { background-position: 40% 30%; }
+    100% { background-position: 60% 60%; }
   }
 
   body::before {

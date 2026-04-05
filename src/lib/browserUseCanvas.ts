@@ -25,7 +25,7 @@ interface BrowserUseSession {
   lastStepSummary?: string | null;
 }
 
-export async function fetchCanvasAssignments(signal?: AbortSignal): Promise<CanvasAssignment[]> {
+export async function fetchCanvasAssignments(signal?: AbortSignal, days: number = 14): Promise<CanvasAssignment[]> {
   const { apiKey, canvasUsername, canvasPassword } = getSettings();
 
   if (!apiKey) throw new Error("Please configure your Browser Use API key in Settings first.");
@@ -33,7 +33,7 @@ export async function fetchCanvasAssignments(signal?: AbortSignal): Promise<Canv
     throw new Error("Please enter your UCSD Canvas SSO username and password in Settings first.");
 
   const today = new Date().toISOString().split("T")[0];
-  const end = new Date(Date.now() + 14 * 86400000).toISOString().split("T")[0];
+  const end = new Date(Date.now() + days * 86400000).toISOString().split("T")[0];
 
   const task = `
 You are automating a browser to fetch Canvas assignments. Follow these steps EXACTLY.

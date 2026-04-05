@@ -10,7 +10,6 @@ import { SettingsPanel, getSettings } from "@/components/SettingsPanel";
 import { fetchEmails } from "@/lib/browserUse";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
 import type { Email, TimeRange, EmailCount } from "@/components/EmailCard";
 
 export default function Index() {
@@ -144,6 +143,7 @@ export default function Index() {
               <CanvasAssignments onOpenSettings={() => setSettingsOpen(true)} />
               <CalendarEvents />
 
+<<<<<<< Updated upstream
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-sm font-semibold text-foreground font-display">Priority Inbox</h2>
                 <span className="text-xs text-muted-foreground">
@@ -202,6 +202,10 @@ export default function Index() {
 
               {/* Filters & Refetch — below emails */}
               <div className="glass rounded-lg p-4 mt-4 animate-fade-in">
+=======
+              {/* Filters */}
+              <div className="glass rounded-lg p-4 mb-4 animate-fade-in">
+>>>>>>> Stashed changes
                 <div className="flex flex-wrap items-center gap-4">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
@@ -242,6 +246,7 @@ export default function Index() {
                       ))}
                     </div>
                   </div>
+<<<<<<< Updated upstream
                   <div className="h-4 w-px bg-border/50" />
                   <Button size="sm" variant="outline" onClick={handleGetEmails} disabled={loading} className="gap-1.5 ml-auto">
                     <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />
@@ -249,6 +254,66 @@ export default function Index() {
                   </Button>
                 </div>
               </div>
+=======
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-sm font-semibold text-foreground font-display">Priority Inbox</h2>
+                <span className="text-xs text-muted-foreground">
+                  {emails.length > 0 ? "Click an email to expand" : "Ranked by importance"}
+                </span>
+              </div>
+
+              {/* Error state with retry */}
+              {error && !loading && (
+                <div className="glass rounded-lg p-5 mb-4 border border-destructive/20 animate-fade-in">
+                  <div className="flex items-start gap-3">
+                    <div className="h-8 w-8 rounded-lg bg-destructive/15 flex items-center justify-center shrink-0">
+                      <AlertTriangle className="h-4 w-4 text-destructive" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground mb-1">Something went wrong</p>
+                      <p className="text-xs text-muted-foreground mb-3">{error}</p>
+                      <Button size="sm" variant="outline" onClick={handleGetEmails} className="gap-1.5">
+                        <RefreshCw className="h-3 w-3" />
+                        Try again
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Loading skeletons */}
+              {loading && <EmailSkeleton count={5} />}
+
+              {/* Empty state — only show if no error */}
+              {!loading && emails.length === 0 && !error && (
+                <div className="glass rounded-lg p-12 text-center">
+                  <Mail className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-sm text-muted-foreground">
+                    {hasFetched
+                      ? "No important emails today — you're all caught up!"
+                      : 'Click "Get Emails" to fetch your important emails.'}
+                  </p>
+                  {!hasFetched && (
+                    <Button onClick={handleGetEmails} disabled={loading} className="gap-2 mt-4">
+                      <RefreshCw className="h-4 w-4" />
+                      Get Emails
+                    </Button>
+                  )}
+                </div>
+              )}
+
+              {/* Email list */}
+              {!loading && emails.length > 0 && (
+                <div className="space-y-2">
+                  {emails.map((email, i) => (
+                    <EmailCard key={email.id} email={email} index={i} />
+                  ))}
+                </div>
+              )}
+>>>>>>> Stashed changes
             </>
           )}
         </div>

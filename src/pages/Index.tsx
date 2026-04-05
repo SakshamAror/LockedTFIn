@@ -9,11 +9,13 @@ import { ChatBubble } from "@/components/ChatBubble";
 import { CalendarEvents, type EventRange } from "@/components/CalendarEvents";
 import { TimelineChart } from "@/components/TimelineChart";
 import { CanvasAssignments, type AssignmentRange } from "@/components/CanvasAssignments";
+import { WebRegSchedule, type TermCode } from "@/components/WebRegSchedule";
 import { SettingsPanel, getSettings } from "@/components/SettingsPanel";
 import { fetchEmails } from "@/lib/browserUse";
 import { fetchCalendarEvents, type CalendarEvent } from "@/lib/browserUseCalendar";
 import { fetchCanvasAssignments, type CanvasAssignment } from "@/lib/browserUseCanvas";
 import { fetchGradescopeAssignments, type GradescopeAssignment } from "@/lib/browserUseGradescope";
+import { fetchWebRegSchedule, type WebRegCourse } from "@/lib/browserUseWebReg";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import type { Email, TimeRange, EmailCount } from "@/components/EmailCard";
@@ -50,7 +52,15 @@ export default function Index() {
   const [gsHasFetched, setGsHasFetched] = useState(false);
   const [gsError, setGsError] = useState<string | null>(null);
   const gsAbortRef = useRef<AbortController | null>(null);
- 
+
+  // WebReg state
+  const [webRegCourses, setWebRegCourses] = useState<WebRegCourse[]>([]);
+  const [webRegLoading, setWebRegLoading] = useState(false);
+  const [webRegHasFetched, setWebRegHasFetched] = useState(false);
+  const [webRegError, setWebRegError] = useState<string | null>(null);
+  const [webRegTerm, setWebRegTerm] = useState<TermCode>("SP26");
+  const webRegAbortRef = useRef<AbortController | null>(null);
+
   // Shared state
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -183,8 +193,37 @@ export default function Index() {
     }
   }, [isCanvasConnected, assignmentRange]);
 
+  // WebReg fetch
+  const handleFetchWebReg = useCallback(async () => {
+    if (!isCanvasConnected) {
+      toast.error("Please set your UCSD SSO credentials in Setup first.");
+      setSettingsOpen(true);
+      return;
+    }
+    setWebRegLoading(true);
+    setWebRegError(null);
+    webRegAbortRef.current = new AbortController();
+    toast.info("Fetching WebReg schedule… Approve Duo 2FA on your device.", { duration: 10000 });
+    try {
+      const fetched = await fetchWebRegSchedule(webRegAbortRef.current.signal, webRegTerm);
+      setWebRegCourses(fetched);
+      setWebRegHasFetched(true);
+      if (fetched.length > 0) toast.success(`Found ${fetched.length} class section${fetched.length !== 1 ? "s" : ""}.`);
+      else toast.info("No classes found for this term.");
+    } catch (err: any) {
+      if (err.name === "AbortError") return;
+      const msg = err.message || "Failed to fetch WebReg schedule.";
+      setWebRegError(msg);
+      toast.error(msg);
+      setWebRegHasFetched(true);
+    } finally {
+      setWebRegLoading(false);
+      webRegAbortRef.current = null;
+    }
+  }, [isCanvasConnected, webRegTerm]);
+
   // Update All
-  const isAnyLoading = emailLoading || eventsLoading || assignmentsLoading || gsLoading;
+  const isAnyLoading = emailLoading || eventsLoading || assignmentsLoading || gsLoading || webRegLoading;
  
   const handleUpdateAll = useCallback(async () => {
     if (!isConnected) {
@@ -297,6 +336,12 @@ export default function Index() {
                   {gsAssignments.length} Gradescope
                 </span>
               )}
+              {webRegHasFetched && (
+                <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                  <Clock className="h-3 w-3" />
+                  {webRegCourses.length} classes
+                </span>
+              )}
             </div>
  
             {isAnyLoading && (
@@ -366,7 +411,18 @@ export default function Index() {
                 onFetch={handleFetchEvents}
                 onCancel={() => { eventsAbortRef.current?.abort(); setEventsLoading(false); }}
               />
- 
+
+              <WebRegSchedule
+                courses={webRegCourses}
+                loading={webRegLoading}
+                hasFetched={webRegHasFetched}
+                error={webRegError}
+                termCode={webRegTerm}
+                onTermChange={setWebRegTerm}
+                onFetch={handleFetchWebReg}
+                onCancel={() => { webRegAbortRef.current?.abort(); setWebRegLoading(false); }}
+              />
+
               {/* Filters & Refetch */}
               <div className="glass rounded-lg p-4 mb-4 animate-fade-in">
                 <div className="flex flex-wrap items-center gap-4">

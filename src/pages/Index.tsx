@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { Mail, Inbox, RefreshCw, Loader2, Settings, XCircle, AlertTriangle } from "lucide-react";
+import { Mail, Inbox, RefreshCw, Loader2, Settings, XCircle, AlertTriangle, Calendar, Hash } from "lucide-react";
 import { EmailCard } from "@/components/EmailCard";
 import { EmailSkeleton } from "@/components/EmailSkeleton";
 import { ImportanceFunnel } from "@/components/ImportanceFunnel";
@@ -10,7 +10,7 @@ import { SettingsPanel, getSettings } from "@/components/SettingsPanel";
 import { fetchEmails } from "@/lib/browserUse";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import type { Email } from "@/components/EmailCard";
+import type { Email, TimeRange, EmailCount } from "@/components/EmailCard";
 
 export default function Index() {
   const [emails, setEmails] = useState<Email[]>([]);
@@ -18,6 +18,8 @@ export default function Index() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [timeRange, setTimeRange] = useState<TimeRange>("today");
+  const [emailCount, setEmailCount] = useState<EmailCount>(5);
   const abortRef = useRef<AbortController | null>(null);
 
   const { apiKey, email } = getSettings();
@@ -50,7 +52,7 @@ export default function Index() {
     toast.info("Fetching your emails… this may take a few minutes.");
 
     try {
-      const fetched = await fetchEmails(abortRef.current.signal);
+      const fetched = await fetchEmails(abortRef.current.signal, timeRange, emailCount);
       if (fetched.length > 0) {
         setEmails(fetched);
         toast.success(`Found ${fetched.length} important email${fetched.length !== 1 ? "s" : ""}!`);
@@ -140,6 +142,51 @@ export default function Index() {
             <>
               <CanvasAssignments onOpenSettings={() => setSettingsOpen(true)} />
               <CalendarEvents />
+
+              {/* Filters */}
+              <div className="glass rounded-lg p-4 mb-4 animate-fade-in">
+                <div className="flex flex-wrap items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground font-medium">Time range</span>
+                    <div className="flex gap-1">
+                      {(["today", "week", "month"] as TimeRange[]).map((range) => (
+                        <button
+                          key={range}
+                          onClick={() => setTimeRange(range)}
+                          className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                            timeRange === range
+                              ? "bg-primary/20 text-primary shadow-[0_0_12px_-4px_hsl(var(--primary)/0.4)]"
+                              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                          }`}
+                        >
+                          {range === "today" ? "Today" : range === "week" ? "This Week" : "This Month"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="h-4 w-px bg-border/50" />
+                  <div className="flex items-center gap-2">
+                    <Hash className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground font-medium">Show</span>
+                    <div className="flex gap-1">
+                      {([5, 10, 30] as EmailCount[]).map((count) => (
+                        <button
+                          key={count}
+                          onClick={() => setEmailCount(count)}
+                          className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                            emailCount === count
+                              ? "bg-primary/20 text-primary shadow-[0_0_12px_-4px_hsl(var(--primary)/0.4)]"
+                              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                          }`}
+                        >
+                          {count}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
 
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-sm font-semibold text-foreground font-display">Priority Inbox</h2>

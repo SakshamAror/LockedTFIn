@@ -266,7 +266,7 @@ export default function Index() {
                 onCancel={() => { eventsAbortRef.current?.abort(); setEventsLoading(false); }}
               />
 
-              {eventsHasFetched && assignmentsHasFetched && (
+              {(eventsHasFetched || assignmentsHasFetched) && (
                 <TimelineChart events={events} assignments={assignments} />
               )}
 

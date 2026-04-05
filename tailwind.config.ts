@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import tailwindcssAnimate from "tailwindcss-animate";
 
 export default {
   darkMode: ["class"],
@@ -17,7 +18,6 @@ export default {
         sans: ["'JetBrains Mono'", "monospace"],
         display: ["'JetBrains Mono'", "monospace"],
         mono: ["'JetBrains Mono'", "monospace"],
-      },
       },
       colors: {
         border: "hsl(var(--border))",
@@ -104,5 +104,5 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [tailwindcssAnimate],
 } satisfies Config;

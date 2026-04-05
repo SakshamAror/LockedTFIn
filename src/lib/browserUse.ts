@@ -168,6 +168,7 @@ function parseAgentEmailArray(items: unknown[]): Email[] {
         subject: toStringValue(item.subject, "No subject"),
         preview: toStringValue(item.preview),
         time: toStringValue(item.time),
+        date: toStringValue((item as any).date, ""),
         importance: normalizeImportance(item.importance),
         unread: true,
         category: toStringValue(item.category, "General"),

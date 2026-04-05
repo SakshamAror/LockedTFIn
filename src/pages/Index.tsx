@@ -142,6 +142,8 @@ export default function Index() {
             </div>
           ) : (
             <>
+              <CalendarEvents />
+
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-sm font-semibold text-foreground font-display">Priority Inbox</h2>
                 <span className="text-xs text-muted-foreground">

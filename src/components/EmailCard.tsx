@@ -103,11 +103,12 @@ export function EmailCard({ email, index }: { email: Email; index: number }) {
             <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-line">{email.preview}</p>
             <div className="flex items-center gap-2 mt-3">
               <a
-                href={`https://mail.google.com/mail/u/0/#search/${encodeURIComponent(`from:${email.sender} subject:${email.subject}`)}`}
+                href={`https://mail.google.com/mail/u/0/#search/${encodeURIComponent("from:" + email.sender + " subject:" + email.subject)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className="text-xs text-primary font-medium hover:underline flex items-center gap-1"
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={(e) => { e.stopPropagation(); e.preventDefault(); window.open(e.currentTarget.href, "_blank"); }}
+                className="text-xs text-primary font-medium hover:underline flex items-center gap-1 relative z-20"
               >
                 Open in Gmail
                 <ArrowUpRight className="h-3 w-3" />

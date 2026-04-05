@@ -170,17 +170,12 @@ export default function Index() {
 
   return (
     <div className="flex min-h-screen relative z-10">
-      {/* ── Sidebar ── */}
-      <aside className="w-60 shrink-0 sticky top-0 h-screen glass-subtle flex flex-col p-5 border-r border-border/30 overflow-y-auto">
-        {/* Logo */}
-        <div className="flex items-center gap-3 px-1 mb-7">
-          <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary/25 to-accent/15 flex items-center justify-center ring-1 ring-primary/15">
-            <Inbox className="h-4.5 w-4.5 text-primary" />
+      <aside className="w-56 shrink-0 sticky top-0 h-screen glass-subtle flex flex-col p-4 border-r border-border/50 overflow-y-auto">
+        <div className="flex items-center gap-2.5 px-2 mb-6">
+          <div className="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center">
+            <Inbox className="h-4 w-4 text-primary" />
           </div>
-          <div>
-            <span className="text-sm font-bold text-foreground tracking-tight font-display">LockedTFIn</span>
-            <span className="block text-[10px] text-muted-foreground/50 tracking-wide">DASHBOARD</span>
-          </div>
+          <span className="text-sm font-semibold text-foreground tracking-tight font-display">LockedTFIn</span>
         </div>
 
         {/* Update All button */}
@@ -188,7 +183,7 @@ export default function Index() {
           size="sm"
           onClick={handleUpdateAll}
           disabled={isAnyLoading}
-          className="gap-2 mb-5 w-full h-9 rounded-xl font-semibold text-xs bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 shadow-lg shadow-primary/20 transition-all duration-300"
+          className="gap-1.5 mb-4 w-full"
         >
           {isAnyLoading ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -205,26 +200,23 @@ export default function Index() {
 
         <button
           onClick={() => setSettingsOpen(true)}
-          className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs text-muted-foreground hover:text-foreground hover:bg-muted/15 transition-all duration-200 mt-4 border-t border-border/20 pt-5 group"
+          className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors mt-4 border-t border-border/50 pt-4"
         >
-          <Settings className="h-4 w-4 group-hover:rotate-90 transition-transform duration-500" />
-          <span className="font-medium">Settings</span>
+          <Settings className="h-4 w-4" />
+          <span>Settings</span>
         </button>
       </aside>
 
-      {/* ── Main ── */}
       <main className="flex-1 flex flex-col h-screen overflow-hidden">
         <header className="glass-subtle rounded-none border-x-0 border-t-0 flex items-center justify-between px-8 py-5 shrink-0">
           <div>
-            <h1 className="text-xl font-bold text-foreground font-display tracking-tight">
-              Good morning, <span className="text-gradient-accent">{userName}</span>
-            </h1>
-            <p className="text-[11px] text-muted-foreground/70 mt-1 mono">
-              {today} · {emails.length} important email{emails.length !== 1 ? "s" : ""}
+            <h1 className="text-xl font-semibold text-foreground font-display">Good morning, {userName}</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {today} · {emails.length} important email{emails.length !== 1 ? "s" : ""} today
             </p>
           </div>
           {isAnyLoading && (
-            <Button variant="outline" size="sm" onClick={handleCancelAll} className="gap-1.5 text-destructive border-destructive/20 hover:bg-destructive/10 rounded-lg">
+            <Button variant="outline" size="sm" onClick={handleCancelAll} className="gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10">
               <XCircle className="h-3.5 w-3.5" />
               Cancel All
             </Button>
@@ -233,21 +225,21 @@ export default function Index() {
 
         <div className="flex-1 overflow-auto p-8">
           {!isConnected ? (
-            <div className="glass gradient-border rounded-2xl p-12 text-center max-w-lg mx-auto mt-16">
-              <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/10 flex items-center justify-center mx-auto mb-5 ring-1 ring-primary/15">
-                <Mail className="h-8 w-8 text-primary" />
+            <div className="glass rounded-xl p-10 text-center max-w-lg mx-auto mt-12">
+              <div className="h-14 w-14 rounded-2xl bg-primary/15 flex items-center justify-center mx-auto mb-4">
+                <Mail className="h-7 w-7 text-primary" />
               </div>
-              <h2 className="text-lg font-bold text-foreground font-display mb-2 tracking-tight">Connect your email</h2>
-              <p className="text-sm text-muted-foreground/70 mb-1 leading-relaxed">
-                To pull your important emails, connect via{" "}
-                <a href="https://cloud.browser-use.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80 underline decoration-primary/30 underline-offset-2 transition-colors">
+              <h2 className="text-lg font-semibold text-foreground font-display mb-2">Connect your email</h2>
+              <p className="text-sm text-muted-foreground mb-1">
+                To pull your important emails, you need to connect via{" "}
+                <a href="https://cloud.browser-use.com" target="_blank" rel="noopener noreferrer" className="text-primary underline">
                   Browser Use Cloud
                 </a>.
               </p>
-              <p className="text-xs text-muted-foreground/50 mb-7">
+              <p className="text-xs text-muted-foreground mb-6">
                 Enter your Gmail address and API key in Settings to get started.
               </p>
-              <Button onClick={() => setSettingsOpen(true)} className="gap-2 rounded-xl h-10 px-6 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 shadow-lg shadow-primary/20">
+              <Button onClick={() => setSettingsOpen(true)} className="gap-2">
                 <Settings className="h-4 w-4" />
                 Open Settings
               </Button>
@@ -276,47 +268,47 @@ export default function Index() {
               />
 
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-sm font-bold text-foreground font-display tracking-tight">Priority Inbox</h2>
-                <span className="text-[10px] text-muted-foreground/50 mono">
-                  {emails.length > 0 ? "Click to expand" : "Ranked by importance"}
+                <h2 className="text-sm font-semibold text-foreground font-display">Priority Inbox</h2>
+                <span className="text-xs text-muted-foreground">
+                  {emails.length > 0 ? "Click an email to expand" : "Ranked by importance"}
                 </span>
               </div>
 
               {/* Filters & Refetch */}
-              <div className="glass rounded-xl p-4 mb-4 animate-fade-in">
+              <div className="glass rounded-lg p-4 mb-4 animate-fade-in">
                 <div className="flex flex-wrap items-center gap-4">
                   <div className="flex items-center gap-2">
-                    <Calendar className="h-3.5 w-3.5 text-muted-foreground/50" />
-                    <span className="text-[10px] text-muted-foreground font-semibold tracking-wide">RANGE</span>
-                    <div className="flex gap-0.5 p-0.5 rounded-lg bg-muted/15 ring-1 ring-border/15">
+                    <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground font-medium">Time range</span>
+                    <div className="flex gap-1">
                       {(["today", "week", "month"] as TimeRange[]).map((range) => (
                         <button
                           key={range}
                           onClick={() => setTimeRange(range)}
-                          className={`px-2.5 py-1 rounded-md text-[10px] font-semibold transition-all duration-200 ${
+                          className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
                             timeRange === range
-                              ? "bg-primary/15 text-primary shadow-sm"
-                              : "text-muted-foreground hover:text-foreground"
+                              ? "bg-primary/20 text-primary shadow-[0_0_12px_-4px_hsl(var(--primary)/0.4)]"
+                              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                           }`}
                         >
-                          {range === "today" ? "Today" : range === "week" ? "Week" : "Month"}
+                          {range === "today" ? "Today" : range === "week" ? "This Week" : "This Month"}
                         </button>
                       ))}
                     </div>
                   </div>
-                  <div className="h-4 w-px bg-border/20" />
+                  <div className="h-4 w-px bg-border/50" />
                   <div className="flex items-center gap-2">
-                    <Hash className="h-3.5 w-3.5 text-muted-foreground/50" />
-                    <span className="text-[10px] text-muted-foreground font-semibold tracking-wide">SHOW</span>
-                    <div className="flex gap-0.5 p-0.5 rounded-lg bg-muted/15 ring-1 ring-border/15">
+                    <Hash className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground font-medium">Show</span>
+                    <div className="flex gap-1">
                       {([5, 10, 30] as EmailCount[]).map((count) => (
                         <button
                           key={count}
                           onClick={() => setEmailCount(count)}
-                          className={`px-2.5 py-1 rounded-md text-[10px] font-semibold transition-all duration-200 mono ${
+                          className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
                             emailCount === count
-                              ? "bg-primary/15 text-primary shadow-sm"
-                              : "text-muted-foreground hover:text-foreground"
+                              ? "bg-primary/20 text-primary shadow-[0_0_12px_-4px_hsl(var(--primary)/0.4)]"
+                              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                           }`}
                         >
                           {count}
@@ -324,8 +316,8 @@ export default function Index() {
                       ))}
                     </div>
                   </div>
-                  <div className="h-4 w-px bg-border/20" />
-                  <Button size="sm" variant="outline" onClick={handleGetEmails} disabled={emailLoading} className="gap-1.5 ml-auto rounded-lg h-7 text-xs">
+                  <div className="h-4 w-px bg-border/50" />
+                  <Button size="sm" variant="outline" onClick={handleGetEmails} disabled={emailLoading} className="gap-1.5 ml-auto">
                     <RefreshCw className={cn("h-3 w-3", emailLoading && "animate-spin")} />
                     {emailLoading ? "Fetching…" : "Refetch"}
                   </Button>
@@ -333,15 +325,15 @@ export default function Index() {
               </div>
 
               {emailError && !emailLoading && (
-                <div className="glass rounded-xl p-5 mb-4 border border-destructive/15 animate-fade-in">
+                <div className="glass rounded-lg p-5 mb-4 border border-destructive/20 animate-fade-in">
                   <div className="flex items-start gap-3">
-                    <div className="h-9 w-9 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0 ring-1 ring-destructive/15">
+                    <div className="h-8 w-8 rounded-lg bg-destructive/15 flex items-center justify-center shrink-0">
                       <AlertTriangle className="h-4 w-4 text-destructive" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-foreground mb-1">Something went wrong</p>
-                      <p className="text-xs text-muted-foreground/70 mb-3">{emailError}</p>
-                      <Button size="sm" variant="outline" onClick={handleGetEmails} className="gap-1.5 rounded-lg">
+                      <p className="text-sm font-medium text-foreground mb-1">Something went wrong</p>
+                      <p className="text-xs text-muted-foreground mb-3">{emailError}</p>
+                      <Button size="sm" variant="outline" onClick={handleGetEmails} className="gap-1.5">
                         <RefreshCw className="h-3 w-3" />
                         Try again
                       </Button>
@@ -353,12 +345,12 @@ export default function Index() {
               {emailLoading && <EmailSkeleton count={5} />}
 
               {!emailLoading && emails.length === 0 && !emailError && (
-                <div className="glass rounded-xl p-14 text-center">
-                  <Mail className="h-8 w-8 text-muted-foreground/25 mx-auto mb-3" />
-                  <p className="text-sm text-muted-foreground/60">
+                <div className="glass rounded-lg p-12 text-center">
+                  <Mail className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-sm text-muted-foreground">
                     {emailHasFetched
-                      ? "No important emails — you're all caught up! ✨"
-                      : 'Click "Update All" or "Refetch" to fetch your emails.'}
+                      ? "No important emails today — you're all caught up!"
+                      : 'Click "Update All" or "Refetch" to fetch your important emails.'}
                   </p>
                 </div>
               )}

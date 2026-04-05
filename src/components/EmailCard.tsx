@@ -20,22 +20,19 @@ export type EmailCount = 5 | 10 | 30;
 
 const importanceConfig = {
   critical: {
-    badge: "bg-destructive/10 text-destructive border-destructive/15",
-    dot: "bg-destructive",
-    bar: "bg-gradient-to-r from-destructive to-destructive/60",
-    glow: "shadow-[0_0_20px_-4px_hsl(var(--destructive)/0.15)]",
+    badge: "bg-destructive/15 text-destructive border-destructive/20",
+    dot: "bg-destructive shadow-[0_0_6px_hsl(var(--destructive)/0.5)]",
+    bar: "bg-destructive",
   },
   high: {
-    badge: "bg-warning/10 text-warning border-warning/15",
-    dot: "bg-warning",
-    bar: "bg-gradient-to-r from-warning to-warning/60",
-    glow: "shadow-[0_0_20px_-4px_hsl(var(--warning)/0.15)]",
+    badge: "bg-warning/15 text-warning border-warning/20",
+    dot: "bg-warning shadow-[0_0_6px_hsl(var(--warning)/0.5)]",
+    bar: "bg-warning",
   },
   medium: {
-    badge: "bg-primary/10 text-primary border-primary/15",
+    badge: "bg-primary/15 text-primary border-primary/20",
     dot: "bg-primary",
-    bar: "bg-gradient-to-r from-primary to-primary/60",
-    glow: "",
+    bar: "bg-primary",
   },
 };
 
@@ -46,54 +43,54 @@ export function EmailCard({ email, index }: { email: Email; index: number }) {
   return (
     <div
       className={cn(
-        "group glass glass-interactive rounded-xl overflow-hidden cursor-pointer",
+        "group glass rounded-lg transition-all duration-200 hover:glass-highlight cursor-pointer overflow-hidden",
         "animate-fade-in",
         expanded && "glow-primary"
       )}
-      style={{ animationDelay: `${index * 50}ms` }}
+      style={{ animationDelay: `${index * 60}ms` }}
       onClick={() => setExpanded(!expanded)}
     >
       {/* Importance accent bar */}
-      <div className={cn("h-[2px] w-full", config.bar)} />
+      <div className={cn("h-0.5 w-full", config.bar)} />
 
       <div className="p-4">
         <div className="flex items-start gap-3">
-          {/* Rank badge */}
-          <div className="flex flex-col items-center gap-2 shrink-0 pt-0.5">
-            <span className="text-[10px] font-bold text-muted-foreground/60 mono">#{index + 1}</span>
-            <div className={cn("h-2 w-2 rounded-full shrink-0 glow-dot", config.dot)} />
+          {/* Rank number */}
+          <div className="flex flex-col items-center gap-1.5 shrink-0">
+            <span className="text-[10px] font-medium text-muted-foreground font-display">#{index + 1}</span>
+            <div className={cn("h-2 w-2 rounded-full shrink-0", config.dot)} />
           </div>
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2 mb-1">
-              <span className="text-sm font-bold text-foreground truncate tracking-tight">{email.sender}</span>
-              <div className="flex items-center gap-2.5 shrink-0">
+              <span className="text-sm font-semibold text-foreground truncate">{email.sender}</span>
+              <div className="flex items-center gap-2 shrink-0">
                 {email.date && (
-                  <span className="text-[10px] text-muted-foreground/70 mono">{email.date}</span>
+                  <span className="text-[10px] text-muted-foreground">{email.date}</span>
                 )}
-                <span className="text-[10px] text-muted-foreground/70 flex items-center gap-1 mono">
-                  <Clock className="h-2.5 w-2.5" />
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
                   {email.time}
                 </span>
                 {expanded ? (
-                  <ChevronUp className="h-3.5 w-3.5 text-primary transition-transform" />
+                  <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" />
                 ) : (
-                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground/40 opacity-0 group-hover:opacity-100 transition-all" />
+                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                 )}
               </div>
             </div>
-            <h3 className="text-[13px] font-semibold text-foreground/85 mb-1.5 truncate">{email.subject}</h3>
+            <h3 className="text-sm font-medium text-foreground/90 mb-1 truncate">{email.subject}</h3>
 
             {!expanded && (
-              <p className="text-xs text-muted-foreground/70 line-clamp-1 leading-relaxed">{email.preview}</p>
+              <p className="text-xs text-muted-foreground line-clamp-1 leading-relaxed">{email.preview}</p>
             )}
 
-            <div className="flex items-center gap-1.5 mt-2.5">
-              <Badge variant="outline" className={cn("text-[9px] px-1.5 py-0 uppercase tracking-[0.1em] font-bold rounded-md", config.badge)}>
+            <div className="flex items-center gap-2 mt-2">
+              <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0 uppercase tracking-wider font-semibold", config.badge)}>
                 {email.importance}
               </Badge>
-              <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-border/40 text-muted-foreground/60 rounded-md">
-                <Tag className="h-2 w-2 mr-1" />
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-border text-muted-foreground">
+                <Tag className="h-2.5 w-2.5 mr-1" />
                 {email.category}
               </Badge>
             </div>
@@ -102,19 +99,19 @@ export function EmailCard({ email, index }: { email: Email; index: number }) {
 
         {/* Expanded content */}
         {expanded && (
-          <div className="mt-4 ml-9 pt-3 border-t border-border/30 animate-fade-in">
-            <p className="text-sm text-foreground/75 leading-relaxed whitespace-pre-line">{email.preview}</p>
-            <div className="flex items-center gap-2 mt-4">
+          <div className="mt-3 ml-9 pt-3 border-t border-border/50 animate-fade-in">
+            <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-line">{email.preview}</p>
+            <div className="flex items-center gap-2 mt-3">
               <a
                 href={`https://mail.google.com/mail/u/0/#search/${encodeURIComponent("from:" + email.sender + " subject:" + email.subject)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 onMouseDown={(e) => e.stopPropagation()}
                 onClick={(e) => { e.stopPropagation(); e.preventDefault(); window.open(e.currentTarget.href, "_blank"); }}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors relative z-20 group/link"
+                className="text-xs text-primary font-medium hover:underline flex items-center gap-1 relative z-20"
               >
                 Open in Gmail
-                <ArrowUpRight className="h-3 w-3 group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-transform" />
+                <ArrowUpRight className="h-3 w-3" />
               </a>
             </div>
           </div>

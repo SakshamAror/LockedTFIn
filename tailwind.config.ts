@@ -1,5 +1,4 @@
 import type { Config } from "tailwindcss";
-import tailwindcssAnimate from "tailwindcss-animate";
 
 export default {
   darkMode: ["class"],
@@ -15,9 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["'JetBrains Mono'", "monospace"],
-        display: ["'JetBrains Mono'", "monospace"],
-        mono: ["'JetBrains Mono'", "monospace"],
+        sans: ["Urbanist", "ui-sans-serif", "system-ui", "sans-serif"],
+        display: ["Urbanist", "ui-sans-serif", "system-ui", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -27,7 +25,6 @@ export default {
         foreground: "hsl(var(--foreground))",
         primary: {
           DEFAULT: "hsl(var(--primary))",
-          glow: "hsl(var(--primary-glow))",
           foreground: "hsl(var(--primary-foreground))",
         },
         secondary: {
@@ -104,5 +101,5 @@ export default {
       },
     },
   },
-  plugins: [tailwindcssAnimate],
+  plugins: [require("tailwindcss-animate")],
 } satisfies Config;

@@ -1,4 +1,4 @@
-import type { Email, TimeRange, EmailCount } from "@/components/EmailCard";
+import type { Email } from "@/components/EmailCard";
 import { getSettings } from "@/components/SettingsPanel";
 
 const BASE_URL = "https://api.browser-use.com/api/v3";
@@ -22,14 +22,12 @@ interface GmailMessage {
   labelIds?: string[];
 }
 
-export async function fetchEmails(signal?: AbortSignal, timeRange: TimeRange = "today", count: EmailCount = 5): Promise<Email[]> {
+export async function fetchEmails(signal?: AbortSignal): Promise<Email[]> {
   const { apiKey, email } = getSettings();
 
   if (!apiKey || !email) {
     throw new Error("Please configure your API key and email in Settings first.");
   }
-
-  const rangeText = timeRange === "today" ? "from today and yesterday" : timeRange === "week" ? "from the past 7 days" : "from the past 30 days";
 
   const createRes = await fetch(`${BASE_URL}/sessions`, {
     method: "POST",
@@ -38,7 +36,7 @@ export async function fetchEmails(signal?: AbortSignal, timeRange: TimeRange = "
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      task: `Using composio connections, read only my emails ${rangeText}. Then, get my ${count} most important unread emails (at ${email}) (if any) ${rangeText} and rank them by potential importance. Return ONLY a valid JSON array with objects having these fields: sender (string), subject (string), preview (first 1-2 sentences of the email body), time (string like "9:30 AM"), date (string like "Apr 5"), importance ("critical" | "high" | "medium"), category (string like "Security", "Work", "Finance", "Social", "Updates"). No markdown, no explanation, just the JSON array.`,
+      task: `Using composio connections, read only my emails from today and yesterday. Then, get my 5 most important unread emails (at ${email}) (if any) from today and yesterday and rank them by potential importance. Return ONLY a valid JSON array with objects having these fields: sender (string), subject (string), preview (first 1-2 sentences of the email body), time (string like "9:30 AM"), importance ("critical" | "high" | "medium"), category (string like "Security", "Work", "Finance", "Social", "Updates"). No markdown, no explanation, just the JSON array.`,
     }),
     signal,
   });
@@ -170,7 +168,6 @@ function parseAgentEmailArray(items: unknown[]): Email[] {
         subject: toStringValue(item.subject, "No subject"),
         preview: toStringValue(item.preview),
         time: toStringValue(item.time),
-        date: toStringValue(item.date),
         importance: normalizeImportance(item.importance),
         unread: true,
         category: toStringValue(item.category, "General"),
@@ -196,17 +193,12 @@ function parseMessages(messages: GmailMessage[]): Email[] {
       ? new Date(msg.messageTimestamp).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
       : "";
 
-    const date = msg.messageTimestamp
-      ? new Date(msg.messageTimestamp).toLocaleDateString("en-US", { month: "short", day: "numeric" })
-      : "";
-
     return {
       id: index + 1,
       sender: msg.sender || "Unknown",
       subject: msg.preview?.subject || msg.subject || "No subject",
       preview: previewText,
       time,
-      date,
       importance,
       unread: msg.labelIds?.includes("UNREAD") ?? true,
       category: inferCategory(msg.labelIds || [], msg.subject || ""),

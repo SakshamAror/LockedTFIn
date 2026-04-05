@@ -97,7 +97,7 @@ export default function Index() {
     eventsAbortRef.current = new AbortController();
     toast.info("Fetching calendar events…");
     try {
-      const fetched = await fetchCalendarEvents(eventsAbortRef.current.signal);
+      const fetched = await fetchCalendarEvents(eventsAbortRef.current.signal, eventRange);
       setEvents(fetched);
       setEventsHasFetched(true);
       if (fetched.length > 0) toast.success(`Found ${fetched.length} event${fetched.length !== 1 ? "s" : ""}.`);

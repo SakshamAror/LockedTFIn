@@ -266,6 +266,8 @@ export default function Index() {
                 loading={eventsLoading}
                 hasFetched={eventsHasFetched}
                 error={eventsError}
+                eventRange={eventRange}
+                onRangeChange={setEventRange}
                 onFetch={handleFetchEvents}
                 onCancel={() => { eventsAbortRef.current?.abort(); setEventsLoading(false); }}
               />

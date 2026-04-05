@@ -3,6 +3,7 @@ import { Mail, Inbox, RefreshCw, Loader2, Settings, XCircle, AlertTriangle } fro
 import { EmailCard } from "@/components/EmailCard";
 import { EmailSkeleton } from "@/components/EmailSkeleton";
 import { ImportanceFunnel } from "@/components/ImportanceFunnel";
+import { CalendarEvents } from "@/components/CalendarEvents";
 import { SettingsPanel, getSettings } from "@/components/SettingsPanel";
 import { fetchEmails } from "@/lib/browserUse";
 import { Button } from "@/components/ui/button";
@@ -141,6 +142,8 @@ export default function Index() {
             </div>
           ) : (
             <>
+              <CalendarEvents />
+
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-sm font-semibold text-foreground font-display">Priority Inbox</h2>
                 <span className="text-xs text-muted-foreground">

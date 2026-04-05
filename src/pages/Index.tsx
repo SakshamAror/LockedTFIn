@@ -98,7 +98,7 @@ export default function Index() {
       </aside>
 
       <main className="flex-1 overflow-auto">
-        <header className="flex items-center justify-between px-8 py-5 border-b border-border/50">
+        <header className="glass-subtle rounded-none border-x-0 border-t-0 flex items-center justify-between px-8 py-5">
           <div>
             <h1 className="text-xl font-semibold text-foreground font-display">Good morning, {userName}</h1>
             <p className="text-xs text-muted-foreground mt-0.5">

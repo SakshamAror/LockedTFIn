@@ -22,7 +22,7 @@ interface GmailMessage {
   labelIds?: string[];
 }
 
-export async function fetchEmails(signal?: AbortSignal): Promise<Email[]> {
+export async function fetchEmails(signal?: AbortSignal, timeRange: "today" | "week" | "month" = "today", count: 5 | 10 | 30 = 5): Promise<Email[]> {
   const { apiKey, email } = getSettings();
 
   if (!apiKey || !email) {
@@ -168,6 +168,7 @@ function parseAgentEmailArray(items: unknown[]): Email[] {
         subject: toStringValue(item.subject, "No subject"),
         preview: toStringValue(item.preview),
         time: toStringValue(item.time),
+        date: toStringValue((item as any).date, ""),
         importance: normalizeImportance(item.importance),
         unread: true,
         category: toStringValue(item.category, "General"),
@@ -193,12 +194,17 @@ function parseMessages(messages: GmailMessage[]): Email[] {
       ? new Date(msg.messageTimestamp).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
       : "";
 
+    const date = msg.messageTimestamp
+      ? new Date(msg.messageTimestamp).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+      : "";
+
     return {
       id: index + 1,
       sender: msg.sender || "Unknown",
       subject: msg.preview?.subject || msg.subject || "No subject",
       preview: previewText,
       time,
+      date,
       importance,
       unread: msg.labelIds?.includes("UNREAD") ?? true,
       category: inferCategory(msg.labelIds || [], msg.subject || ""),

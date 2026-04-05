@@ -3,6 +3,17 @@ import { getSettings } from "@/components/SettingsPanel";
 const BASE_URL = "https://api.browser-use.com/api/v3";
 const TIMEOUT_MS = 10 * 60 * 1000; // 10 min (SSO + Duo can be slow)
 const POLL_INTERVAL = 5000;
+const DUO_DEVICE_PROMPT_INSTRUCTIONS = [
+  '- If the URL contains "duo" or "duosecurity", the user is approving the Duo push on their phone. Stay on that page and re-check the page and any visible iframes every second for up to 180 seconds.',
+  '- Do NOT stop the session or wait for more user input once the Duo push is approved.',
+  '- As soon as a page appears with the heading "Is this your device?" or a large button that says "Yes, this is my device", treat it as an action page, not a waiting page.',
+  '- On that page, NEVER click "Yes, this is my device", "Yes", "Yes, trust", or any trust-browser button.',
+  '- The correct action is to click the smaller secondary link with the exact text "No, other people use this device".',
+  '- That control may be a hyperlink rather than a button and it may be inside an iframe. Inspect the main page and every visible iframe for the exact text "No, other people use this device" and click it immediately.',
+  '- If the exact text is not clickable on the first try, scroll it into view and retry up to 3 times before doing anything else.',
+  '- If the exact text is not found, click the smaller secondary text link directly underneath the large "Yes, this is my device" button that contains the phrase "other people use this device".',
+  '- After clicking the "No, other people use this device" link, continue the login flow until the real Canvas page is fully loaded.',
+].join("\n");
 
 export interface CanvasAssignment {
   id: number;
@@ -40,8 +51,7 @@ export async function fetchCanvasAssignments(signal?: AbortSignal): Promise<Canv
 Go to https://canvas.ucsd.edu and log in using UCSD SSO.
 - On the SSO login page, enter username: "${canvasUsername}" and password: "${canvasPassword}"
 - Click the login/submit button
-- Wait for screen change (don't end the session or wait for the next user input, continue it) — the user will approve the push notification on their phone (wait up to 2 minutes), but if the screen changes skip to the next step. IMPORTANT: During or after the Duo 2FA is approved, a page will likely appear asking "Is this your device?" or similar. There will be a clickable link or button that says "No, other people use this device" — you MUST click it immediately. Do not skip this step. Look for it as a hyperlink or anchor text on the page and click it before proceeding.
-- IMPORTANT: A page will likely appear asking "Is this your device?" or similar. There will be a clickable link or button that says "No, other people use this device" — you MUST click it immediately. Do not skip this step. Look for it as a hyperlink or anchor text on the page and click it before proceeding.
+${DUO_DEVICE_PROMPT_INSTRUCTIONS}
 - Once logged into Canvas, use the browser to call this API endpoint: https://canvas.ucsd.edu/api/v1/planner/items?start_date=2026-01-01&end_date=2026-12-31&per_page=200
 - Also call: https://canvas.ucsd.edu/api/v1/courses?enrollment_state=active&per_page=50&include[]=teachers&include[]=term
 

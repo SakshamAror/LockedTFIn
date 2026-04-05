@@ -5,6 +5,61 @@ const BASE_URL = "https://api.browser-use.com/api/v3";
 const TIMEOUT_MS = 10 * 60 * 1000;
 const POLL_INTERVAL = 5000;
 
+/**
+ * Google Calendar color IDs:
+ * 1=Lavender, 2=Sage, 3=Grape, 4=Flamingo, 5=Banana,
+ * 6=Tangerine, 7=Peacock, 8=Graphite, 9=Blueberry, 10=Basil, 11=Tomato
+ */
+export const EVENT_COLORS = {
+  lecture:    { id: "9",  label: "Blueberry",  hex: "#3F51B5" },
+  lab:        { id: "10", label: "Basil",      hex: "#0B8043" },
+  discussion: { id: "5",  label: "Banana",     hex: "#F6BF26" },
+  final:      { id: "11", label: "Tomato",     hex: "#D50000" },
+  midterm:    { id: "6",  label: "Tangerine",  hex: "#F4511E" },
+  review:     { id: "8",  label: "Graphite",   hex: "#616161" },
+  other:      { id: "1",  label: "Lavender",   hex: "#7986CB" },
+  assignment: { id: "3",  label: "Grape",      hex: "#8E24AA" },
+} as const;
+
+// Map day abbreviations to RRULE BYDAY values
+const DAY_MAP: Record<string, string> = {
+  M: "MO", Mo: "MO", Mon: "MO",
+  Tu: "TU", Tue: "TU", T: "TU",
+  W: "WE", We: "WE", Wed: "WE",
+  Th: "TH", Thu: "TH", R: "TH",
+  F: "FR", Fr: "FR", Fri: "FR",
+  Sa: "SA", Sat: "SA", S: "SA",
+  Su: "SU", Sun: "SU",
+};
+
+function parseDaysToRruleDays(dayCode: string): string[] {
+  const result: string[] = [];
+  let i = 0;
+  while (i < dayCode.length) {
+    // Try two-char match first
+    if (i + 1 < dayCode.length) {
+      const twoChar = dayCode.substring(i, i + 2);
+      if (DAY_MAP[twoChar]) {
+        result.push(DAY_MAP[twoChar]);
+        i += 2;
+        continue;
+      }
+    }
+    const oneChar = dayCode[i];
+    if (DAY_MAP[oneChar]) {
+      result.push(DAY_MAP[oneChar]);
+    }
+    i++;
+  }
+  return result;
+}
+
+export interface SyncResult {
+  created: number;
+  failed: number;
+  errors: string[];
+}
+
 async function stopSession(sessionId: string, apiKey: string) {
   try {
     await fetch(`${BASE_URL}/sessions/${sessionId}/stop`, {
@@ -26,11 +81,11 @@ interface BrowserUseSession {
 
 const GCAL_COLOR: Record<CourseType, string> = {
   LE: "Blueberry",
-  DI: "Sage",
-  LA: "Banana",
+  DI: "Banana",
+  LA: "Basil",
   SE: "Peacock",
-  MI: "Tomato",
-  FI: "Grape",
+  MI: "Tangerine",
+  FI: "Tomato",
 };
 
 const TYPE_LABEL: Record<CourseType, string> = {
@@ -42,212 +97,135 @@ const TYPE_LABEL: Record<CourseType, string> = {
   FI: "Final",
 };
 
-const DAY_ORDER = ["1", "2", "3", "4", "5", "6", "7"];
-const DAY_NAMES: Record<string, string> = {
-  "1": "Monday", "2": "Tuesday", "3": "Wednesday",
-  "4": "Thursday", "5": "Friday", "6": "Saturday", "7": "Sunday",
-};
-
 function fmt24(hh: number, mm: number) {
   return `${hh.toString().padStart(2, "0")}:${mm.toString().padStart(2, "0")}`;
 }
 
-function fmtDateLong(dateStr: string) {
+function fmtDate(dateStr: string): string {
   try {
-    return new Date(dateStr + "T12:00:00").toLocaleDateString("en-US", {
-      weekday: "long", month: "long", day: "numeric", year: "numeric",
-    });
-  } catch { return dateStr; }
+    return new Date(dateStr + "T12:00:00").toISOString().slice(0, 10);
+  } catch {
+    return dateStr;
+  }
 }
 
-interface CourseEvent {
-  num: number;
-  kind: "WEEKLY" | "ONE-TIME";
-  title: string;
-  days?: string;       // "Monday, Wednesday, Friday"
-  date?: string;       // "Friday, June 12, 2026"
-  startTime: string;   // "11:00"
-  endTime: string;     // "11:50"
-  location: string;
-  description: string;
-  color: string;
-}
-
-function buildCourseEvents(courses: WebRegCourse[]): CourseEvent[] {
-  const ONE_TIME: CourseType[] = ["FI", "MI"];
-  const events: CourseEvent[] = [];
-
-  // ── Weekly: deduplicate and merge days by section key ────────────────────
-  const sectionMap = new Map<string, { course: WebRegCourse; dayCodes: Set<string> }>();
-  const examMap = new Map<string, WebRegCourse>();
-
-  for (const c of courses) {
-    if (ONE_TIME.includes(c.type)) {
-      // Deduplicate exams by subj+code+type+startDate
-      const examKey = `${c.subj}|${c.code}|${c.type}|${c.startDate ?? ""}`;
-      if (!examMap.has(examKey)) examMap.set(examKey, c);
-      continue;
-    }
-    const key = `${c.subj}|${c.code}|${c.section}|${c.type}`;
-    if (!sectionMap.has(key)) sectionMap.set(key, { course: c, dayCodes: new Set() });
-    if (c.dayCode) sectionMap.get(key)!.dayCodes.add(c.dayCode);
-  }
-
-  let num = 1;
-
-  for (const { course: c, dayCodes } of sectionMap.values()) {
-    const days = DAY_ORDER
-      .filter((d) => dayCodes.has(d))
-      .map((d) => DAY_NAMES[d])
-      .join(", ");
-    if (!days) continue;
-
-    events.push({
-      num: num++,
-      kind: "WEEKLY",
-      title: `${c.subj} ${c.code} ${TYPE_LABEL[c.type]} (${c.section})`,
-      days,
-      startTime: fmt24(c.startHH, c.startMM),
-      endTime: fmt24(c.endHH, c.endMM),
-      location: c.location || "",
-      description: c.instructor ? `Instructor: ${c.instructor}` : "",
-      color: GCAL_COLOR[c.type],
-    });
-  }
-
-  for (const c of examMap.values()) {
-    if (!c.startDate) continue;
-    events.push({
-      num: num++,
-      kind: "ONE-TIME",
-      title: `${c.subj} ${c.code} ${TYPE_LABEL[c.type]}`,
-      date: fmtDateLong(c.startDate),
-      startTime: fmt24(c.startHH, c.startMM),
-      endTime: fmt24(c.endHH, c.endMM),
-      location: c.location || "",
-      description: c.instructor ? `Instructor: ${c.instructor}` : "",
-      color: GCAL_COLOR[c.type],
-    });
-  }
-
-  return events;
+function dayBefore(dateStr: string): string {
+  const d = new Date(dateStr + "T12:00:00");
+  d.setDate(d.getDate() - 1);
+  return d.toISOString().slice(0, 10);
 }
 
 export async function pushCoursesToCalendar(
   courses: WebRegCourse[],
   termName: string,
   signal?: AbortSignal
-): Promise<number> {
+): Promise<SyncResult> {
   const { apiKey, email } = getSettings();
   if (!apiKey || !email) throw new Error("Please configure your API key and email in Settings first.");
   if (courses.length === 0) throw new Error("No courses to add.");
 
-  const events = buildCourseEvents(courses);
-  const weeklyCount = events.filter((e) => e.kind === "WEEKLY").length;
-  const examCount = events.filter((e) => e.kind === "ONE-TIME").length;
-  const total = events.length;
+  const classInstructions: string[] = [];
+  let eventIndex = 0;
 
-  // Format as a numbered list so the AI knows exactly how many events to create
-  const eventLines = events.map((e) => {
-    if (e.kind === "WEEKLY") {
-      return [
-        `EVENT ${e.num} of ${total} [WEEKLY RECURRING]`,
-        `  Title:       ${e.title}`,
-        `  Days:        ${e.days}`,
-        `  Start time:  ${e.startTime}`,
-        `  End time:    ${e.endTime}`,
-        `  Location:    ${e.location || "none"}`,
-        `  Description: ${e.description || "none"}`,
-        `  Color:       ${e.color}`,
-        `  Repeat until: June 14, 2026`,
-      ].join("\n");
-    } else {
-      return [
-        `EVENT ${e.num} of ${total} [ONE-TIME]`,
-        `  Title:       ${e.title}`,
-        `  Date:        ${e.date}`,
-        `  Start time:  ${e.startTime}`,
-        `  End time:    ${e.endTime}`,
-        `  Location:    ${e.location || "none"}`,
-        `  Description: ${e.description || "none"}`,
-        `  Color:       ${e.color}`,
-      ].join("\n");
+  // Find the latest final exam date per course to set recurrence end date
+  const courseFinalDate: Record<string, string> = {};
+  for (const c of courses) {
+    if (c.type === "FI" && c.startDate) {
+      const course = `${c.subj}${c.code}`;
+      if (!courseFinalDate[course] || c.startDate > courseFinalDate[course]) {
+        courseFinalDate[course] = c.startDate;
+      }
     }
-  }).join("\n\n");
-
-  const task = `Open Google Calendar for the account ${email} from composio connections.
-
-You must create exactly ${total} calendar events for ${termName}. The list below is already deduplicated — do NOT create any event more than once.
-
-RULES:
-1. WEEKLY RECURRING events: create ONE event that repeats on ALL listed days every week until June 14, 2026. Do NOT create separate events for each day.
-2. ONE-TIME events: create a single event on the exact date listed.
-3. After creating each event, open the event color picker and select the exact color name shown (these are Google Calendar's built-in color names).
-4. Fill in Location and Description exactly as shown.
-5. Create the events one by one in order. After finishing all ${total}, stop.
-
-COLOR REFERENCE (Google Calendar built-in names):
-- Blueberry = blue (lectures)
-- Sage = green (discussions)
-- Banana = yellow (labs)
-- Peacock = teal (seminars)
-- Tomato = red (midterms)
-- Grape = purple (finals)
-
-EVENTS (${total} total: ${weeklyCount} weekly, ${examCount} one-time):
-
-${eventLines}
-
-When done, return only the number of events created as a plain integer.`;
-
-  const createRes = await fetch(`${BASE_URL}/sessions`, {
-    method: "POST",
-    headers: { "X-Browser-Use-API-Key": apiKey, "Content-Type": "application/json" },
-    body: JSON.stringify({ task }),
-    signal,
-  });
-
-  if (!createRes.ok) {
-    const status = createRes.status;
-    if (status === 401 || status === 403) throw new Error("Invalid Browser Use API key.");
-    if (status === 429) throw new Error("Rate limited. Please wait and try again.");
-    throw new Error(`Failed to create session (HTTP ${status}).`);
   }
 
-  const session: BrowserUseSession = await createRes.json();
-  if (!session.id) throw new Error("No session ID returned from Browser Use.");
+  // Deduplicate by section key: one event per course+section+type combination
+  const sectionMap = new Map<string, { course: WebRegCourse; dayCodes: Set<string> }>();
+  const examMap = new Map<string, WebRegCourse>();
 
-  const start = Date.now();
-  while (Date.now() - start < TIMEOUT_MS) {
-    signal?.throwIfAborted();
-    await new Promise((r) => setTimeout(r, POLL_INTERVAL));
-
-    const pollRes = await fetch(`${BASE_URL}/sessions/${session.id}`, {
-      headers: { "X-Browser-Use-API-Key": apiKey },
-      signal,
-    });
-    if (!pollRes.ok) throw new Error(`Poll failed (HTTP ${pollRes.status}).`);
-
-    const result: BrowserUseSession = await pollRes.json();
-
-    if (result.status === "timed_out") throw new Error("Timed out while adding calendar events.");
-    if (result.status === "error" || result.isTaskSuccessful === false)
-      throw new Error(result.lastStepSummary || "Could not add events to Google Calendar.");
-
-    if (
-      result.output !== null &&
-      result.output !== undefined &&
-      !(typeof result.output === "string" && result.output.trim() === "")
-    ) {
-      await stopSession(session.id, apiKey);
-      const n = parseInt(String(result.output).trim(), 10);
-      return isNaN(n) ? total : n;
+  for (const c of courses) {
+    if (c.type === "FI" || c.type === "MI") {
+      // Deduplicate exams by course+type+startDate
+      const examKey = `${c.subj}${c.code}|${c.type}|${c.startDate ?? ""}`;
+      if (!examMap.has(examKey)) examMap.set(examKey, c);
+      continue;
     }
 
-    if (result.status === "stopped") return 0;
+    // For weekly events: group by section
+    const key = `${c.subj}|${c.code}|${c.section}|${c.type}`;
+    if (!sectionMap.has(key)) sectionMap.set(key, { course: c, dayCodes: new Set() });
+    if (c.dayCode) sectionMap.get(key)!.dayCodes.add(c.dayCode);
   }
 
-  throw new Error("Push to calendar timed out after 10 minutes.");
+  // Build instructions for weekly classes
+  for (const { course: c, dayCodes } of sectionMap.values()) {
+    if (dayCodes.size === 0) continue;
+
+    const rruleDays = Array.from(dayCodes)
+      .flatMap((d) => parseDaysToRruleDays(d))
+      .filter((v, i, a) => a.indexOf(v) === i) // deduplicate
+      .sort()
+      .join(",");
+
+    if (!rruleDays) continue;
+
+    const colorId = (EVENT_COLORS[c.type.toLowerCase() as keyof typeof EVENT_COLORS]?.id) ?? "1";
+    const course = `${c.subj} ${c.code}`;
+    const title = `${course} ${TYPE_LABEL[c.type]} (${c.section})`;
+    const location = c.location || "";
+    const description = c.instructor ? `Instructor: ${c.instructor}` : "";
+    const startTime = fmt24(c.startHH, c.startMM);
+    const endTime = fmt24(c.endHH, c.endMM);
+    const startDate = fmtDate(c.startDate ?? new Date().toISOString().slice(0, 10));
+    const finalDate = courseFinalDate[`${c.subj}${c.code}`];
+    const untilDate = finalDate ? dayBefore(finalDate) : (c.endDate ? fmtDate(c.endDate) : startDate);
+
+    eventIndex++;
+    classInstructions.push(
+      `Event ${eventIndex}: Create a WEEKLY RECURRING event titled "${title}" ` +
+      `starting ${startDate}, repeating every week on ${rruleDays} until ${untilDate}. ` +
+      `Time: ${startTime} - ${endTime}. ` +
+      `Location: "${location}". ` +
+      `Description: "${description}". ` +
+      `Color ID: ${colorId}. Timezone: America/Los_Angeles. ` +
+      `Use RRULE: FREQ=WEEKLY;BYDAY=${rruleDays};UNTIL=${untilDate.replace(/-/g, "")}T235959Z`
+    );
+  }
+
+  // Build instructions for exams (one-time events)
+  for (const c of examMap.values()) {
+    if (!c.startDate) continue;
+
+    const colorId = (EVENT_COLORS[c.type.toLowerCase() as keyof typeof EVENT_COLORS]?.id) ?? "1";
+    const course = `${c.subj} ${c.code}`;
+    const title = `${course} ${TYPE_LABEL[c.type]}`;
+    const location = c.location || "";
+    const description = c.instructor ? `Instructor: ${c.instructor}` : "";
+    const startTime = fmt24(c.startHH, c.startMM);
+    const endTime = fmt24(c.endHH, c.endMM);
+    const examDate = fmtDate(c.startDate);
+
+    eventIndex++;
+    classInstructions.push(
+      `Event ${eventIndex}: Create a ONE-TIME event titled "${title}" ` +
+      `on ${examDate}. ` +
+      `Time: ${startTime} - ${endTime}. ` +
+      `Location: "${location}". ` +
+      `Description: "${description}". ` +
+      `Color ID: ${colorId}. Timezone: America/Los_Angeles.`
+    );
+  }
+
+  if (classInstructions.length === 0) {
+    return { created: 0, failed: 0, errors: ["No courses to add."] };
+  }
+
+  return runSyncSession(
+    apiKey,
+    email,
+    `Create ALL of the following ${classInstructions.length} CLASS events on Google Calendar.\n\n${classInstructions.join("\n\n")}`,
+    classInstructions.length,
+    signal
+  );
 }
 
 // ── Assignments push ──────────────────────────────────────────────────────────

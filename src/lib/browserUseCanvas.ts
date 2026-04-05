@@ -41,7 +41,7 @@ Go to https://canvas.ucsd.edu and log in using UCSD SSO.
 - On the SSO login page, enter username: "${canvasUsername}" and password: "${canvasPassword}"
 - Click the login/submit button
 - Wait for Duo 2FA — the user will approve the push notification on their phone (wait up to 2 minutes)
-- If an option appears to choose "Yes, this is my device" and "No, other people use this device", choose "No, other people use this device"
+- If an option appears to press a link for "No, this is my device", press it.
 - Once logged into Canvas, use the browser to call this API endpoint: https://canvas.ucsd.edu/api/v1/planner/items?start_date=2026-01-01&end_date=2026-12-31&per_page=200
 - Also call: https://canvas.ucsd.edu/api/v1/courses?enrollment_state=active&per_page=50&include[]=teachers&include[]=term
 

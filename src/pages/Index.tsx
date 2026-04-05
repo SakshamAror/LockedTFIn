@@ -16,6 +16,7 @@ import { fetchCalendarEvents, type CalendarEvent } from "@/lib/browserUseCalenda
 import { fetchCanvasAssignments, type CanvasAssignment } from "@/lib/browserUseCanvas";
 import { fetchGradescopeAssignments, type GradescopeAssignment } from "@/lib/browserUseGradescope";
 import { fetchWebRegSchedule, type WebRegCourse } from "@/lib/browserUseWebReg";
+import { pushCoursesToCalendar, pushAssignmentsToCalendar } from "@/lib/browserUsePushToCalendar";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import type { Email, TimeRange, EmailCount } from "@/components/EmailCard";
@@ -59,6 +60,12 @@ export default function Index() {
   const [webRegHasFetched, setWebRegHasFetched] = useState(false);
   const [webRegError, setWebRegError] = useState<string | null>(null);
   const webRegAbortRef = useRef<AbortController | null>(null);
+  const [webRegPushLoading, setWebRegPushLoading] = useState(false);
+  const webRegPushAbortRef = useRef<AbortController | null>(null);
+
+  // Assignments push state
+  const [assignmentsPushLoading, setAssignmentsPushLoading] = useState(false);
+  const assignmentsPushAbortRef = useRef<AbortController | null>(null);
 
   // Shared state
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -234,6 +241,53 @@ export default function Index() {
   }, [isCanvasConnected, currentTermCode]);
 
   // WebReg push to calendar
+  const handlePushWebRegToCalendar = useCallback(async () => {
+    if (!isConnected) {
+      toast.error("Please configure your API key and email in Setup first.");
+      setSettingsOpen(true);
+      return;
+    }
+    setWebRegPushLoading(true);
+    webRegPushAbortRef.current = new AbortController();
+    const termLabel = currentTermLabel[currentTermCode] ?? currentTermCode;
+    toast.info(`Adding ${webRegCourses.length} class sections to Google Calendar…`, { duration: 12000 });
+    try {
+      const added = await pushCoursesToCalendar(webRegCourses, termLabel, webRegPushAbortRef.current.signal);
+      toast.success(`Added ${added} event${added !== 1 ? "s" : ""} to Google Calendar!`);
+    } catch (err: any) {
+      if (err.name === "AbortError") return;
+      toast.error(err.message || "Failed to push schedule to calendar.");
+    } finally {
+      setWebRegPushLoading(false);
+      webRegPushAbortRef.current = null;
+    }
+  }, [isConnected, webRegCourses, currentTermCode, currentTermLabel]);
+
+  // Assignments push to calendar
+  const handlePushAssignmentsToCalendar = useCallback(async () => {
+    if (!isConnected) {
+      toast.error("Please configure your API key and email in Setup first.");
+      setSettingsOpen(true);
+      return;
+    }
+    setAssignmentsPushLoading(true);
+    assignmentsPushAbortRef.current = new AbortController();
+    toast.info("Adding assignments to Google Calendar…", { duration: 12000 });
+    try {
+      const allAssignments = [
+        ...assignments.map((a: CanvasAssignment) => ({ ...a, source: "canvas" as const })),
+        ...gsAssignments,
+      ];
+      const added = await pushAssignmentsToCalendar(allAssignments, assignmentsPushAbortRef.current.signal);
+      toast.success(`Added ${added} assignment${added !== 1 ? "s" : ""} to Google Calendar!`);
+    } catch (err: any) {
+      if (err.name === "AbortError") return;
+      toast.error(err.message || "Failed to push assignments to calendar.");
+    } finally {
+      setAssignmentsPushLoading(false);
+      assignmentsPushAbortRef.current = null;
+    }
+  }, [isConnected, assignments, gsAssignments]);
 
   // Update All
   const isAnyLoading = emailLoading || eventsLoading || assignmentsLoading || gsLoading || webRegLoading;
@@ -413,6 +467,8 @@ export default function Index() {
                 onCancel={() => { assignmentsAbortRef.current?.abort(); setAssignmentsLoading(false); }}
                 onCancelGradescope={() => { gsAbortRef.current?.abort(); setGsLoading(false); }}
                 onOpenSettings={() => setSettingsOpen(true)}
+                onPushToCalendar={handlePushAssignmentsToCalendar}
+                pushLoading={assignmentsPushLoading}
               />
 
               <WebRegSchedule
@@ -422,6 +478,8 @@ export default function Index() {
                 error={webRegError}
                 onFetch={handleFetchWebReg}
                 onCancel={() => { webRegAbortRef.current?.abort(); setWebRegLoading(false); }}
+                onPushToCalendar={handlePushWebRegToCalendar}
+                pushLoading={webRegPushLoading}
               />
 
               <CalendarEvents

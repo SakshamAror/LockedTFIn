@@ -1,4 +1,4 @@
-import { BookOpen, RefreshCw, Loader2, XCircle, AlertTriangle, Clock, CheckCircle2, ExternalLink, GraduationCap } from "lucide-react";
+import { BookOpen, RefreshCw, Loader2, XCircle, AlertTriangle, Clock, CheckCircle2, ExternalLink, GraduationCap, CalendarPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { CanvasAssignment } from "@/lib/browserUseCanvas";
@@ -25,6 +25,8 @@ interface AssignmentsPanelProps {
   onCancel: () => void;
   onCancelGradescope: () => void;
   onOpenSettings: () => void;
+  onPushToCalendar: () => void;
+  pushLoading: boolean;
 }
 
 export function CanvasAssignments({
@@ -37,6 +39,7 @@ export function CanvasAssignments({
   onFetch, onFetchGradescope,
   onCancel, onCancelGradescope,
   onOpenSettings,
+  onPushToCalendar, pushLoading,
 }: AssignmentsPanelProps) {
 
   const isAnyLoading = loading || gradescopeLoading;
@@ -175,6 +178,12 @@ export function CanvasAssignments({
           <Button variant="outline" size="sm" onClick={onFetchGradescope} disabled={gradescopeLoading} className="gap-1.5 h-7 text-xs border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10">
             {gradescopeLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <GraduationCap className="h-3 w-3" />}
             {gradescopeLoading ? "Gradescope…" : "Gradescope"}
+          </Button>
+          <Button size="sm" onClick={onPushToCalendar}
+            disabled={isAnyLoading || pushLoading || filteredAssignments.length === 0}
+            className="gap-1.5 h-7 text-xs bg-indigo-600 hover:bg-indigo-500 text-white border-0 disabled:opacity-50 disabled:cursor-not-allowed">
+            {pushLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <CalendarPlus className="h-3 w-3" />}
+            {pushLoading ? "Adding…" : "Add to Calendar"}
           </Button>
         </div>
       </div>

@@ -36,7 +36,7 @@ export async function fetchEmails(signal?: AbortSignal): Promise<Email[]> {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      task: `Pull out my 5 most important unread emails (at ${email}) (if any) from today and rank them by potential importance. Return ONLY a valid JSON array with objects having these fields: sender (string), subject (string), preview (first 1-2 sentences of the email body), time (string like "9:30 AM"), importance ("critical" | "high" | "medium"), category (string like "Security", "Work", "Finance", "Social", "Updates"). No markdown, no explanation, just the JSON array.`,
+      task: `Using composio workbench, Pull out my 5 most important unread emails (at ${email}) (if any) from today and rank them by potential importance. Return ONLY a valid JSON array with objects having these fields: sender (string), subject (string), preview (first 1-2 sentences of the email body), time (string like "9:30 AM"), importance ("critical" | "high" | "medium"), category (string like "Security", "Work", "Finance", "Social", "Updates"). No markdown, no explanation, just the JSON array.`,
     }),
     signal,
   });
@@ -75,11 +75,16 @@ export async function fetchEmails(signal?: AbortSignal): Promise<Email[]> {
     const result: BrowserUseSession = await pollRes.json();
 
     if (result.status === "timed_out") {
-      throw new Error("Browser Use timed out. Please check that your Gmail address and Browser Use API key are correct in Settings.");
+      throw new Error(
+        "Browser Use timed out. Please check that your Gmail address and Browser Use API key are correct in Settings.",
+      );
     }
 
     if (result.status === "error" || result.isTaskSuccessful === false) {
-      throw new Error(result.lastStepSummary || "Browser Use could not complete the email fetch. Please verify your Gmail address and API key in Settings.");
+      throw new Error(
+        result.lastStepSummary ||
+          "Browser Use could not complete the email fetch. Please verify your Gmail address and API key in Settings.",
+      );
     }
 
     if (hasOutput(result.output)) {
@@ -91,7 +96,9 @@ export async function fetchEmails(signal?: AbortSignal): Promise<Email[]> {
     }
   }
 
-  throw new Error("Request timed out after 8 minutes. Please check that your Gmail address and Browser Use API key are correct in Settings.");
+  throw new Error(
+    "Request timed out after 8 minutes. Please check that your Gmail address and Browser Use API key are correct in Settings.",
+  );
 }
 
 function hasOutput(output: unknown): boolean {
@@ -108,7 +115,9 @@ function parseSessionOutput(output: unknown): Email[] {
       emails = parseStructuredOutput(output);
     }
   } catch (err: any) {
-    throw new Error(err.message || "Could not parse the email data. The response format was unexpected — please try again.");
+    throw new Error(
+      err.message || "Could not parse the email data. The response format was unexpected — please try again.",
+    );
   }
 
   if (emails.length === 0 && hasOutput(output)) {
@@ -152,16 +161,18 @@ function parseAgentEmailArray(items: unknown[]): Email[] {
       return [];
     }
 
-    return [{
-      id: index + 1,
-      sender: toStringValue(item.sender, "Unknown"),
-      subject: toStringValue(item.subject, "No subject"),
-      preview: toStringValue(item.preview),
-      time: toStringValue(item.time),
-      importance: normalizeImportance(item.importance),
-      unread: true,
-      category: toStringValue(item.category, "General"),
-    }];
+    return [
+      {
+        id: index + 1,
+        sender: toStringValue(item.sender, "Unknown"),
+        subject: toStringValue(item.subject, "No subject"),
+        preview: toStringValue(item.preview),
+        time: toStringValue(item.time),
+        importance: normalizeImportance(item.importance),
+        unread: true,
+        category: toStringValue(item.category, "General"),
+      },
+    ];
   });
 }
 
@@ -215,13 +226,17 @@ function parseJsonOutput(output: string): Email[] {
     try {
       const jsonMatch = trimmedOutput.match(/\[[\s\S]*\]/);
       if (!jsonMatch) {
-        throw new Error("No email data found in the response. Browser Use may not have been able to access your inbox.");
+        throw new Error(
+          "No email data found in the response. Browser Use may not have been able to access your inbox.",
+        );
       }
       return parseStructuredOutput(JSON.parse(jsonMatch[0]));
     } catch (error: any) {
       if (error.message.includes("No email data")) throw error;
       console.error("Failed to parse Browser Use output:", error);
-      throw new Error("Failed to parse email data from Browser Use. The response format was unexpected — please try again.");
+      throw new Error(
+        "Failed to parse email data from Browser Use. The response format was unexpected — please try again.",
+      );
     }
   }
 }

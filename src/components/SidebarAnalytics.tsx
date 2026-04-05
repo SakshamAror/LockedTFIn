@@ -53,8 +53,8 @@ export function SidebarAnalytics({ events, assignments, lastUpdated }: SidebarAn
         </div>
         {nextAssignment ? (
           <div>
-            <p className="text-xs font-medium text-foreground truncate">{nextAssignment.title}</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
+            <p className="text-xs font-mono font-medium text-foreground truncate">{nextAssignment.title}</p>
+            <p className="text-[10px] font-mono text-muted-foreground mt-0.5 truncate">
               {nextAssignment.course} · {nextAssignment.dueDate}
             </p>
           </div>

@@ -35,7 +35,7 @@ export async function fetchCalendarEvents(signal?: AbortSignal): Promise<Calenda
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      task: `Go to Google Calendar for the account ${email} and get my next 5 upcoming events starting from today. Return ONLY a valid JSON array with objects having these fields: summary (string - event title), date (string like "Mon, Apr 7"), time (string like "9:00 AM - 10:00 AM"), duration (string like "1 hour"), location (string, empty if none). No markdown, no explanation, just the JSON array.`,
+      task: `Go to Google Calendar for the account ${email} from composio connections and get my next 5 upcoming events starting from today. Return ONLY a valid JSON array with objects having these fields: summary (string - event title), date (string like "Mon, Apr 7"), time (string like "9:00 AM - 10:00 AM"), duration (string like "1 hour"), location (string, empty if none). No markdown, no explanation, just the JSON array.`,
     }),
     signal,
   });
@@ -70,7 +70,11 @@ export async function fetchCalendarEvents(signal?: AbortSignal): Promise<Calenda
       throw new Error(result.lastStepSummary || "Could not fetch calendar events.");
     }
 
-    if (result.output !== null && result.output !== undefined && !(typeof result.output === "string" && result.output.trim() === "")) {
+    if (
+      result.output !== null &&
+      result.output !== undefined &&
+      !(typeof result.output === "string" && result.output.trim() === "")
+    ) {
       return parseCalendarOutput(result.output);
     }
 

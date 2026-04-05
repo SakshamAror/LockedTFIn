@@ -141,7 +141,7 @@ export default function Index() {
       setAssignmentsLoading(false);
       assignmentsAbortRef.current = null;
     }
-  }, [isCanvasConnected]);
+  }, [isCanvasConnected, assignmentRange]);
 
   // Update All
   const isAnyLoading = emailLoading || eventsLoading || assignmentsLoading;

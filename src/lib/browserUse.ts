@@ -1,4 +1,4 @@
-import type { Email } from "@/components/EmailCard";
+import type { Email, TimeRange, EmailCount } from "@/components/EmailCard";
 import { getSettings } from "@/components/SettingsPanel";
 
 const BASE_URL = "https://api.browser-use.com/api/v3";

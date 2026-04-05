@@ -112,7 +112,7 @@ export default function Index() {
       setEventsLoading(false);
       eventsAbortRef.current = null;
     }
-  }, []);
+  }, [eventRange]);
 
   // Canvas fetch
   const handleFetchAssignments = useCallback(async () => {

@@ -5,6 +5,19 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { runChatTask, stopSession } from "@/lib/browserUseChat";
 import { getSettings } from "@/components/SettingsPanel";
 
+function renderMarkdown(text: string): string {
+  // Escape HTML first
+  let html = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+  // Bold: **text**
+  html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  // Inline code: `text`
+  html = html.replace(/`([^`]+)`/g, '<code class="bg-muted/50 px-1 py-0.5 rounded text-xs">$1</code>');
+  return html;
+}
+
 interface Message {
   id: number;
   role: "user" | "assistant";
@@ -165,17 +178,16 @@ export function ChatBubble({ onOpenChange }: ChatBubbleProps) {
             {messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} min-w-0`}
               >
                 <div
-                  className={`text-sm leading-relaxed max-w-[75%] rounded-xl px-4 py-3 whitespace-pre-wrap ${
+                  className={`text-sm leading-relaxed max-w-[75%] rounded-xl px-4 py-3 whitespace-pre-wrap break-words overflow-hidden ${
                     msg.role === "user"
                       ? "bg-primary/20 text-foreground"
                       : "glass text-foreground"
                   }`}
-                >
-                  {msg.content}
-                </div>
+                  dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }}
+                />
               </div>
             ))}
             {loading && (

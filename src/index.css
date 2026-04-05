@@ -63,8 +63,7 @@
   }
 
   body {
-    @apply text-foreground font-sans antialiased;
-    font-family: 'Urbanist', sans-serif;
+    @apply text-foreground font-mono antialiased;
     background-image: url('/images/wallpaper.jpg');
     background-size: cover;
     background-position: center;

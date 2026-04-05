@@ -3,7 +3,7 @@ import { getSettings } from "@/components/SettingsPanel";
 
 const BASE_URL = "https://api.browser-use.com/api/v3";
 const TIMEOUT_MS = 8 * 60 * 1000;
-const POLL_INTERVAL = 5000;
+const POLL_INTERVAL = 3000;
 
 interface BrowserUseSession {
   id: string;

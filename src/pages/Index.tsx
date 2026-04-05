@@ -143,51 +143,6 @@ export default function Index() {
               <CanvasAssignments onOpenSettings={() => setSettingsOpen(true)} />
               <CalendarEvents />
 
-              {/* Filters */}
-              <div className="glass rounded-lg p-4 mb-4 animate-fade-in">
-                <div className="flex flex-wrap items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground font-medium">Time range</span>
-                    <div className="flex gap-1">
-                      {(["today", "week", "month"] as TimeRange[]).map((range) => (
-                        <button
-                          key={range}
-                          onClick={() => setTimeRange(range)}
-                          className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
-                            timeRange === range
-                              ? "bg-primary/20 text-primary shadow-[0_0_12px_-4px_hsl(var(--primary)/0.4)]"
-                              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                          }`}
-                        >
-                          {range === "today" ? "Today" : range === "week" ? "This Week" : "This Month"}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="h-4 w-px bg-border/50" />
-                  <div className="flex items-center gap-2">
-                    <Hash className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground font-medium">Show</span>
-                    <div className="flex gap-1">
-                      {([5, 10, 30] as EmailCount[]).map((count) => (
-                        <button
-                          key={count}
-                          onClick={() => setEmailCount(count)}
-                          className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
-                            emailCount === count
-                              ? "bg-primary/20 text-primary shadow-[0_0_12px_-4px_hsl(var(--primary)/0.4)]"
-                              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                          }`}
-                        >
-                          {count}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-sm font-semibold text-foreground font-display">Priority Inbox</h2>
                 <span className="text-xs text-muted-foreground">
@@ -243,6 +198,56 @@ export default function Index() {
                   ))}
                 </div>
               )}
+
+              {/* Filters & Refetch — below emails */}
+              <div className="glass rounded-lg p-4 mt-4 animate-fade-in">
+                <div className="flex flex-wrap items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground font-medium">Time range</span>
+                    <div className="flex gap-1">
+                      {(["today", "week", "month"] as TimeRange[]).map((range) => (
+                        <button
+                          key={range}
+                          onClick={() => setTimeRange(range)}
+                          className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                            timeRange === range
+                              ? "bg-primary/20 text-primary shadow-[0_0_12px_-4px_hsl(var(--primary)/0.4)]"
+                              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                          }`}
+                        >
+                          {range === "today" ? "Today" : range === "week" ? "This Week" : "This Month"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="h-4 w-px bg-border/50" />
+                  <div className="flex items-center gap-2">
+                    <Hash className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground font-medium">Show</span>
+                    <div className="flex gap-1">
+                      {([5, 10, 30] as EmailCount[]).map((count) => (
+                        <button
+                          key={count}
+                          onClick={() => setEmailCount(count)}
+                          className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                            emailCount === count
+                              ? "bg-primary/20 text-primary shadow-[0_0_12px_-4px_hsl(var(--primary)/0.4)]"
+                              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                          }`}
+                        >
+                          {count}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="h-4 w-px bg-border/50" />
+                  <Button size="sm" variant="outline" onClick={handleGetEmails} disabled={loading} className="gap-1.5 ml-auto">
+                    <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />
+                    {loading ? "Fetching…" : "Refetch"}
+                  </Button>
+                </div>
+              </div>
             </>
           )}
         </div>

@@ -69,7 +69,7 @@ export function SidebarAnalytics({ events, assignments, lastUpdated }: SidebarAn
           <Clock className="h-3 w-3 text-muted-foreground" />
           <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider font-medium">Last Updated</span>
         </div>
-        <p className={cn("text-xs font-medium", lastUpdated ? "text-foreground" : "text-muted-foreground italic")}>
+        <p className={cn("text-xs font-mono font-medium", lastUpdated ? "text-foreground" : "text-muted-foreground italic")}>
           {lastUpdated ? formatTimeAgo(lastUpdated) : "Not yet"}
         </p>
       </div>

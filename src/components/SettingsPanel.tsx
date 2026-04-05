@@ -42,7 +42,7 @@ export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () =>
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
             <Settings className="h-4 w-4 text-primary" />
-            <h2 className="text-sm font-semibold text-foreground font-display">Settings</h2>
+            <h2 className="text-sm font-semibold text-foreground font-display">Setup</h2>
           </div>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
             <X className="h-4 w-4" />
@@ -115,7 +115,7 @@ export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () =>
         </div>
 
         <Button onClick={handleSave} className="w-full mt-5">
-          Save Settings
+          Save Setup
         </Button>
       </div>
     </div>

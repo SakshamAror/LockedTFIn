@@ -11,7 +11,7 @@ const navItems = [
 ];
 
 const bottomItems = [
-  { icon: Settings, label: "Settings" },
+  { icon: Settings, label: "Setup" },
 ];
 
 export function DashboardSidebar() {

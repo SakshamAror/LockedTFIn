@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { MessageCircle, X, Send, Loader2, Square, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -26,6 +26,81 @@ interface Message {
 
 interface ChatBubbleProps {
   onOpenChange?: (open: boolean) => void;
+}
+
+const SUGGESTIONS = [
+  "Write me a professional email to my professor about missing class",
+  "Find my next 1 hour long event",
+  "Do I have a lab this week?",
+  "Summarize my unread emails",
+  "What meetings do I have tomorrow?",
+  "Draft a follow-up email for my internship application",
+  "When is my next free afternoon this week?",
+  "Email my study group about meeting tonight",
+  "Do I have any deadlines this weekend?",
+  "Schedule a 30-min coffee chat tomorrow",
+  "Find emails from my TA",
+  "What's on my calendar today?",
+];
+
+function SuggestionCarousel({ onSelect, disabled }: { onSelect: (s: string) => void; disabled?: boolean }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const animRef = useRef<number | null>(null);
+  const pausedRef = useRef(false);
+
+  // Auto-scroll animation
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    let speed = 0.5; // px per frame
+
+    const step = () => {
+      if (!pausedRef.current && el) {
+        el.scrollLeft += speed;
+        // Loop: when we've scrolled past the first set, jump back
+        const half = el.scrollWidth / 2;
+        if (el.scrollLeft >= half) {
+          el.scrollLeft -= half;
+        }
+      }
+      animRef.current = requestAnimationFrame(step);
+    };
+    animRef.current = requestAnimationFrame(step);
+    return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
+  }, []);
+
+  // Duplicate suggestions for seamless loop
+  const items = [...SUGGESTIONS, ...SUGGESTIONS];
+
+  return (
+    <div
+      className="relative max-w-2xl mx-auto"
+      onMouseEnter={() => { pausedRef.current = true; }}
+      onMouseLeave={() => { pausedRef.current = false; }}
+    >
+      {/* Left fade */}
+      <div className="absolute left-0 top-0 bottom-0 w-12 z-10 bg-gradient-to-r from-background to-transparent pointer-events-none" />
+
+      {/* Scrollable suggestions */}
+      <div ref={scrollRef} className="flex gap-2 overflow-x-auto px-8 py-1" style={{ scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" }}>
+        <style>{`.suggestion-scroll::-webkit-scrollbar { display: none; }`}</style>
+        {items.map((s, i) => (
+          <button
+            key={`${s}-${i}`}
+            onClick={() => onSelect(s)}
+            disabled={disabled}
+            className="shrink-0 text-xs px-3 py-1.5 rounded-full border border-border/50 text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors whitespace-nowrap disabled:opacity-50"
+          >
+            {s}
+          </button>
+        ))}
+      </div>
+
+      {/* Right fade */}
+      <div className="absolute right-0 top-0 bottom-0 w-12 z-10 bg-gradient-to-l from-background to-transparent pointer-events-none" />
+    </div>
+  );
 }
 
 export function ChatBubble({ onOpenChange }: ChatBubbleProps) {
@@ -143,17 +218,6 @@ export function ChatBubble({ onOpenChange }: ChatBubbleProps) {
                 <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-4">
                   I can help you manage your <span className="text-foreground font-medium">Gmail</span> and <span className="text-foreground font-medium">Google Calendar</span> — send emails, check your inbox, create events, update meetings, and more.
                 </p>
-                <div className="flex flex-wrap justify-center gap-2 max-w-md mx-auto">
-                  {["Send an email", "Check my calendar", "Create a meeting", "Read my latest emails"].map((hint) => (
-                    <button
-                      key={hint}
-                      onClick={() => { setInput(hint); }}
-                      className="text-xs px-3 py-1.5 rounded-full border border-border/50 text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
-                    >
-                      {hint}
-                    </button>
-                  ))}
-                </div>
               </div>
             )}
             {messages.map((msg) => (
@@ -180,6 +244,11 @@ export function ChatBubble({ onOpenChange }: ChatBubbleProps) {
               </div>
             )}
           </div>
+        </div>
+
+        {/* Suggestion carousel - always visible */}
+        <div className="shrink-0 py-2 px-6 border-t border-border/20">
+          <SuggestionCarousel onSelect={(s) => setInput(s)} disabled={loading} />
         </div>
 
         {/* Input bar */}

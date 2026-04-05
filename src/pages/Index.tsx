@@ -1,51 +1,5 @@
-
-
-import { useState, useRef, useCallback } from "react"; import { Mail, Inbox, RefreshCw, Loader2, Settings, XCircle, AlertTriangle, Calendar, Hash, GraduationCap, Clock } from "lucide-react"; import { EmailCard } from "@/components/EmailCard"; import { EmailSkeleton } from "@/components/EmailSkeleton
-
-pasted
-
-resolve merge conflicts for me (preferable accept incoming change):
-
-3:37 AM
-
-Untangled nested merge conflicts and reconstructed clean file
-Untangled nested merge conflicts and reconstructed clean file
-Looking through the file, there are nested conflicts (Updated upstream, Aksh_branch, Stashed changes, and main). I'll resolve everything by preferring main, using the correct emailError/emailLoading/emailHasFetched variable names throughout, placing filters before the email list, and replacing the cn() call (which isn't imported) with a template literal for the Refetch button.
-
-
-Created a file, read a file
-Created a file, read a file
-Here's a summary of every conflict resolved and what was chosen:
-
-Outer conflict (order of filters vs email list): Took main — filters come before the email list with mb-4, not after it with mt-4.
-
-Inner conflict (variable names): Took main — uses emailError, emailLoading, and emailHasFetched consistently throughout, discarding the stale error/loading/hasFetched names from Aksh_branch.
-
-Inner conflict (Refetch button): The button existed in Updated upstream but used cn() which isn't imported anywhere in the file. Kept the button since it's clearly useful, but replaced cn("h-3 w-3", emailLoading && "animate-spin") with a plain template literal to avoid a runtime crash.
-
-Empty state: Took main — no "Get Emails" button in the empty state, just the prompt text pointing users to "Update All" or "Refetch".
-
-Index
-Code · TSX 
-give me code as a text file
-
-3:41 AM
-
-Ran a command, read a file
-Ran a command, read a file
-There you go — same code, plain .txt file.
-
-Index
-TXT 
-
-
-
-
-Claude is AI and can make mistakes. Please double-check responses.
-Index · TXT
-Copy
-
 import { useState, useRef, useCallback } from "react";
+
 import { Mail, Inbox, RefreshCw, Loader2, Settings, XCircle, AlertTriangle, Calendar, Hash, GraduationCap, Clock } from "lucide-react";
 import { EmailCard } from "@/components/EmailCard";
 import { EmailSkeleton } from "@/components/EmailSkeleton";
@@ -59,6 +13,7 @@ import { SettingsPanel, getSettings } from "@/components/SettingsPanel";
 import { fetchEmails } from "@/lib/browserUse";
 import { fetchCalendarEvents, type CalendarEvent } from "@/lib/browserUseCalendar";
 import { fetchCanvasAssignments, type CanvasAssignment } from "@/lib/browserUseCanvas";
+import { fetchGradescopeAssignments, type GradescopeAssignment } from "@/lib/browserUseGradescope";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import type { Email, TimeRange, EmailCount } from "@/components/EmailCard";
@@ -88,6 +43,13 @@ export default function Index() {
   const [assignmentsError, setAssignmentsError] = useState<string | null>(null);
   const [assignmentRange, setAssignmentRange] = useState<AssignmentRange>(7);
   const assignmentsAbortRef = useRef<AbortController | null>(null);
+
+  // Gradescope state
+  const [gsAssignments, setGsAssignments] = useState<GradescopeAssignment[]>([]);
+  const [gsLoading, setGsLoading] = useState(false);
+  const [gsHasFetched, setGsHasFetched] = useState(false);
+  const [gsError, setGsError] = useState<string | null>(null);
+  const gsAbortRef = useRef<AbortController | null>(null);
  
   // Shared state
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -111,7 +73,7 @@ export default function Index() {
   // Email fetch
   const handleGetEmails = useCallback(async () => {
     if (!isConnected) {
-      toast.error("Please set your API key and email in Settings first.");
+      toast.error("Please set your API key and email in Setup first.");
       setSettingsOpen(true);
       return;
     }
@@ -166,7 +128,7 @@ export default function Index() {
   // Canvas fetch
   const handleFetchAssignments = useCallback(async () => {
     if (!isCanvasConnected) {
-      toast.error("Please set your Canvas SSO credentials in Settings first.");
+      toast.error("Please set your Canvas SSO credentials in Setup first.");
       setSettingsOpen(true);
       return;
     }
@@ -192,30 +154,64 @@ export default function Index() {
     }
   }, [isCanvasConnected, assignmentRange]);
  
+  // Gradescope fetch
+  const handleFetchGradescope = useCallback(async () => {
+    if (!isCanvasConnected) {
+      toast.error("Please set your UCSD SSO credentials in Setup first.");
+      setSettingsOpen(true);
+      return;
+    }
+    setGsLoading(true);
+    setGsError(null);
+    gsAbortRef.current = new AbortController();
+    toast.info("Fetching Gradescope assignments… Approve Duo 2FA on your device.", { duration: 10000 });
+    try {
+      const fetched = await fetchGradescopeAssignments(gsAbortRef.current.signal, assignmentRange);
+      setGsAssignments(fetched);
+      setGsHasFetched(true);
+      if (fetched.length > 0) toast.success(`Found ${fetched.length} Gradescope assignment${fetched.length !== 1 ? "s" : ""}.`);
+      else toast.info("No Gradescope assignments found.");
+    } catch (err: any) {
+      if (err.name === "AbortError") return;
+      const msg = err.message || "Failed to fetch Gradescope assignments.";
+      setGsError(msg);
+      toast.error(msg);
+      setGsHasFetched(true);
+    } finally {
+      setGsLoading(false);
+      gsAbortRef.current = null;
+    }
+  }, [isCanvasConnected, assignmentRange]);
+
   // Update All
-  const isAnyLoading = emailLoading || eventsLoading || assignmentsLoading;
+  const isAnyLoading = emailLoading || eventsLoading || assignmentsLoading || gsLoading;
  
   const handleUpdateAll = useCallback(async () => {
     if (!isConnected) {
-      toast.error("Please configure Settings first.");
+      toast.error("Please configure Setup first.");
       setSettingsOpen(true);
       return;
     }
     toast.info("Updating everything…");
     const promises: Promise<void>[] = [handleGetEmails(), handleFetchEvents()];
-    if (isCanvasConnected) promises.push(handleFetchAssignments());
+    if (isCanvasConnected) {
+      promises.push(handleFetchAssignments());
+      promises.push(handleFetchGradescope());
+    }
     await Promise.allSettled(promises);
     setLastUpdated(new Date());
     toast.success("All updated!");
-  }, [handleGetEmails, handleFetchEvents, handleFetchAssignments, isConnected, isCanvasConnected]);
+  }, [handleGetEmails, handleFetchEvents, handleFetchAssignments, handleFetchGradescope, isConnected, isCanvasConnected]);
  
   const handleCancelAll = useCallback(() => {
     emailAbortRef.current?.abort();
     eventsAbortRef.current?.abort();
     assignmentsAbortRef.current?.abort();
+    gsAbortRef.current?.abort();
     setEmailLoading(false);
     setEventsLoading(false);
     setAssignmentsLoading(false);
+    setGsLoading(false);
     toast.info("All fetches cancelled.");
   }, []);
  
@@ -252,7 +248,7 @@ export default function Index() {
           className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors mt-4 border-t border-border/50 pt-4"
         >
           <Settings className="h-4 w-4" />
-          <span>Settings</span>
+          <span>Setup</span>
         </button>
       </aside>
  
@@ -292,7 +288,13 @@ export default function Index() {
               {assignmentsHasFetched && (
                 <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
                   <GraduationCap className="h-3 w-3" />
-                  {assignments.length} due
+                  {assignments.length} Canvas
+                </span>
+              )}
+              {gsHasFetched && (
+                <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  <GraduationCap className="h-3 w-3" />
+                  {gsAssignments.length} Gradescope
                 </span>
               )}
             </div>
@@ -323,29 +325,35 @@ export default function Index() {
                 </a>.
               </p>
               <p className="text-xs text-muted-foreground mb-6">
-                Enter your Gmail address and API key in Settings to get started.
+                Enter your Gmail address and API key in Setup to get started.
               </p>
               <Button onClick={() => setSettingsOpen(true)} className="gap-2">
                 <Settings className="h-4 w-4" />
-                Open Settings
+                Open Setup
               </Button>
             </div>
           ) : (
             <>
-              {(eventsHasFetched || assignmentsHasFetched) && (
-                <TimelineChart events={events} assignments={assignments} />
+              {(eventsHasFetched || assignmentsHasFetched || gsHasFetched) && (
+                <TimelineChart events={events} assignments={assignments} gradescopeAssignments={gsAssignments} />
               )}
  
               <CanvasAssignments
                 assignments={assignments}
+                gradescopeAssignments={gsAssignments}
                 loading={assignmentsLoading}
+                gradescopeLoading={gsLoading}
                 hasFetched={assignmentsHasFetched}
+                gradescopeHasFetched={gsHasFetched}
                 error={assignmentsError}
+                gradescopeError={gsError}
                 isConnected={isCanvasConnected}
                 assignmentRange={assignmentRange}
                 onRangeChange={setAssignmentRange}
                 onFetch={handleFetchAssignments}
+                onFetchGradescope={handleFetchGradescope}
                 onCancel={() => { assignmentsAbortRef.current?.abort(); setAssignmentsLoading(false); }}
+                onCancelGradescope={() => { gsAbortRef.current?.abort(); setGsLoading(false); }}
                 onOpenSettings={() => setSettingsOpen(true)}
               />
               <CalendarEvents

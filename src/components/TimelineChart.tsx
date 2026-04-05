@@ -10,18 +10,20 @@ import {
 } from "recharts";
 import type { CalendarEvent } from "@/lib/browserUseCalendar";
 import type { CanvasAssignment } from "@/lib/browserUseCanvas";
+import type { GradescopeAssignment } from "@/lib/browserUseGradescope";
 
 interface TimelineChartProps {
   events: CalendarEvent[];
   assignments: CanvasAssignment[];
+  gradescopeAssignments?: GradescopeAssignment[];
 }
 
 function parseDate(dateStr: string): Date | null {
-  // Try common formats: "Mon Jun 9", "June 9, 2025", "2025-06-09", "06/09/2025", etc.
   const now = new Date();
-  const parsed = new Date(dateStr);
+  // Handle "Mon, Apr 07 2026 at 06:59 AM UTC" format
+  const cleaned = dateStr.replace(/\s+at\s+/i, " ");
+  const parsed = new Date(cleaned);
   if (!isNaN(parsed.getTime())) {
-    // If year is missing, the parser might default to 2001 etc — fix it
     if (parsed.getFullYear() < 2020) parsed.setFullYear(now.getFullYear());
     return parsed;
   }
@@ -35,21 +37,22 @@ function daysBetween(a: Date, b: Date): number {
   return Math.round((bDay.getTime() - aDay.getTime()) / msPerDay);
 }
 
-export function TimelineChart({ events, assignments }: TimelineChartProps) {
+export function TimelineChart({ events, assignments, gradescopeAssignments = [] }: TimelineChartProps) {
   const today = useMemo(() => {
     const d = new Date();
     return new Date(d.getFullYear(), d.getMonth(), d.getDate());
   }, []);
 
-  const { eventDots, assignmentDots, maxDay } = useMemo(() => {
+  const { eventDots, assignmentDots, gradescopeDots, maxDay } = useMemo(() => {
     const evts: { day: number; y: number; label: string }[] = [];
     const asns: { day: number; y: number; label: string }[] = [];
+    const gsDots: { day: number; y: number; label: string }[] = [];
 
     events.forEach((e) => {
       const d = parseDate(e.date);
       if (!d) return;
       const day = daysBetween(today, d);
-      if (day >= 0) evts.push({ day, y: 2, label: e.summary });
+      if (day >= 0) evts.push({ day, y: 3, label: e.summary });
     });
 
     assignments.forEach((a) => {
@@ -57,14 +60,22 @@ export function TimelineChart({ events, assignments }: TimelineChartProps) {
       const d = parseDate(a.dueDate);
       if (!d) return;
       const day = daysBetween(today, d);
-      if (day >= 0) asns.push({ day, y: 1, label: `${a.title} (${a.course})` });
+      if (day >= 0) asns.push({ day, y: 2, label: `${a.title} (${a.course})` });
     });
 
-    const allDays = [...evts.map((e) => e.day), ...asns.map((a) => a.day)];
+    gradescopeAssignments.forEach((a) => {
+      if (a.dueDate === "N/A") return;
+      const d = parseDate(a.dueDate);
+      if (!d) return;
+      const day = daysBetween(today, d);
+      if (day >= 0) gsDots.push({ day, y: 1, label: `${a.title} (${a.course})` });
+    });
+
+    const allDays = [...evts.map((e) => e.day), ...asns.map((a) => a.day), ...gsDots.map((g) => g.day)];
     const max = allDays.length > 0 ? Math.max(...allDays) : 7;
 
-    return { eventDots: evts, assignmentDots: asns, maxDay: Math.max(max, 1) };
-  }, [events, assignments, today]);
+    return { eventDots: evts, assignmentDots: asns, gradescopeDots: gsDots, maxDay: Math.max(max, 1) };
+  }, [events, assignments, gradescopeAssignments, today]);
 
   const formatDay = (day: number) => {
     const d = new Date(today);
@@ -83,7 +94,7 @@ export function TimelineChart({ events, assignments }: TimelineChartProps) {
     );
   };
 
-  if (eventDots.length === 0 && assignmentDots.length === 0) return null;
+  if (eventDots.length === 0 && assignmentDots.length === 0 && gradescopeDots.length === 0) return null;
 
   return (
     <div className="glass rounded-xl p-4 mb-6 animate-fade-in">
@@ -113,7 +124,7 @@ export function TimelineChart({ events, assignments }: TimelineChartProps) {
           <YAxis
             dataKey="y"
             type="number"
-            domain={[0, 3]}
+            domain={[0, 4]}
             hide
           />
           <Tooltip content={<CustomTooltip />} />
@@ -125,9 +136,16 @@ export function TimelineChart({ events, assignments }: TimelineChartProps) {
             r={6}
           />
           <Scatter
-            name="Assignments"
+            name="Canvas"
             data={assignmentDots}
             fill="hsl(38 90% 60%)"
+            shape="circle"
+            r={6}
+          />
+          <Scatter
+            name="Gradescope"
+            data={gradescopeDots}
+            fill="hsl(160 60% 45%)"
             shape="circle"
             r={6}
           />
@@ -140,7 +158,11 @@ export function TimelineChart({ events, assignments }: TimelineChartProps) {
         </div>
         <div className="flex items-center gap-1.5">
           <div className="h-2.5 w-2.5 rounded-full bg-warning" />
-          <span className="text-[10px] text-muted-foreground">Assignments</span>
+          <span className="text-[10px] text-muted-foreground">Canvas</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="h-2.5 w-2.5 rounded-full" style={{ background: "hsl(160 60% 45%)" }} />
+          <span className="text-[10px] text-muted-foreground">Gradescope</span>
         </div>
       </div>
     </div>

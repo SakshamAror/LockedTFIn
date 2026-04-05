@@ -86,7 +86,7 @@
     content: "";
     position: fixed;
     inset: 0;
-    background: transparent;
+    background: radial-gradient(ellipse 60% 15% at 50% 100%, hsl(265 65% 72% / 0.12) 0%, transparent 70%);
     pointer-events: none;
     z-index: 0;
   }

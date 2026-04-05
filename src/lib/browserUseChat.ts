@@ -12,6 +12,8 @@ interface BrowserUseSession {
   lastStepSummary?: string | null;
 }
 
+let activeSessionId: string | null = null;
+
 export async function runChatTask(
   userMessage: string,
   signal?: AbortSignal
@@ -44,6 +46,7 @@ export async function runChatTask(
   const session: BrowserUseSession = await createRes.json();
   if (!session.id) throw new Error("No session ID returned.");
 
+  activeSessionId = session.id;
   const start = Date.now();
 
   while (Date.now() - start < TIMEOUT_MS) {
@@ -73,4 +76,21 @@ export async function runChatTask(
   }
 
   throw new Error("Task timed out after 8 minutes.");
+}
+
+export async function stopSession(): Promise<void> {
+  if (!activeSessionId) return;
+  const { apiKey } = getSettings();
+  if (!apiKey) return;
+
+  try {
+    await fetch(`${BASE_URL}/sessions/${activeSessionId}/stop`, {
+      method: "PUT",
+      headers: { "X-Browser-Use-API-Key": apiKey },
+    });
+  } catch {
+    // best-effort cleanup
+  } finally {
+    activeSessionId = null;
+  }
 }

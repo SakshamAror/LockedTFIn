@@ -245,6 +245,10 @@ export default function Index() {
             </div>
           ) : (
             <>
+              {(eventsHasFetched || assignmentsHasFetched) && (
+                <TimelineChart events={events} assignments={assignments} />
+              )}
+
               <CanvasAssignments
                 assignments={assignments}
                 loading={assignmentsLoading}
@@ -265,10 +269,6 @@ export default function Index() {
                 onFetch={handleFetchEvents}
                 onCancel={() => { eventsAbortRef.current?.abort(); setEventsLoading(false); }}
               />
-
-              {(eventsHasFetched || assignmentsHasFetched) && (
-                <TimelineChart events={events} assignments={assignments} />
-              )}
 
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-sm font-semibold text-foreground font-display">Priority Inbox</h2>

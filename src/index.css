@@ -97,31 +97,55 @@
     position: relative;
     background: hsla(225, 20%, 12%, 0.5);
     backdrop-filter: blur(28px) saturate(1.4);
-    border: 1px solid hsla(225, 15%, 30%, 0.25);
-    border-top: 1px solid hsla(0, 0%, 100%, 0.18);
-    border-left: 1px solid hsla(220, 40%, 70%, 0.1);
+    border: 1px solid transparent;
+    background-clip: padding-box;
     box-shadow:
       0 8px 32px -4px rgba(0, 0, 0, 0.4),
       0 0 60px -8px hsla(200, 60%, 70%, 0.1),
       0 0 120px -20px hsla(280, 40%, 60%, 0.06),
-      inset 0 1px 0 hsla(0, 0%, 100%, 0.12),
-      inset 0 -1px 0 hsla(260, 40%, 60%, 0.06);
+      inset 0 1px 0 hsla(0, 0%, 100%, 0.15),
+      inset 0 -1px 0 hsla(265, 50%, 65%, 0.08),
+      inset 1px 0 0 hsla(220, 50%, 75%, 0.06),
+      inset -1px 0 0 hsla(265, 40%, 60%, 0.04);
   }
 
   .glass::before {
     content: "";
     position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      160deg,
+      hsla(0, 0%, 100%, 0.35) 0%,
+      hsla(0, 0%, 100%, 0.12) 15%,
+      hsla(220, 60%, 75%, 0.08) 30%,
+      transparent 50%,
+      transparent 65%,
+      hsla(265, 50%, 65%, 0.1) 80%,
+      hsla(265, 60%, 72%, 0.2) 95%,
+      hsla(0, 0%, 100%, 0.08) 100%
+    );
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .glass::after {
+    content: "";
+    position: absolute;
     inset: 0;
     border-radius: inherit;
-    background: linear-gradient(135deg, hsla(0, 0%, 100%, 0.04) 0%, transparent 40%, transparent 60%, hsla(280, 50%, 65%, 0.03) 100%);
-    background-size: 100% 100%;
-    background-repeat: no-repeat;
+    background: linear-gradient(135deg, hsla(0, 0%, 100%, 0.05) 0%, transparent 40%, transparent 60%, hsla(265, 50%, 65%, 0.03) 100%);
     pointer-events: none;
     z-index: 0;
   }
 
-
-  .glass > *{
+  .glass > * {
     position: relative;
     z-index: 2;
   }
@@ -130,30 +154,54 @@
     position: relative;
     background: hsla(225, 20%, 10%, 0.55);
     backdrop-filter: blur(20px) saturate(1.2);
-    border: 1px solid hsla(225, 15%, 28%, 0.25);
-    border-top: 1px solid hsla(0, 0%, 100%, 0.15);
-    border-left: 1px solid hsla(220, 35%, 65%, 0.08);
+    border: 1px solid transparent;
+    background-clip: padding-box;
     box-shadow:
       0 4px 24px -2px rgba(0, 0, 0, 0.35),
       0 0 50px -10px hsla(200, 50%, 65%, 0.06),
       0 0 80px -15px hsla(270, 35%, 55%, 0.04),
-      inset 0 1px 0 hsla(0, 0%, 100%, 0.1);
+      inset 0 1px 0 hsla(0, 0%, 100%, 0.12),
+      inset 0 -1px 0 hsla(265, 40%, 60%, 0.05),
+      inset 1px 0 0 hsla(220, 40%, 70%, 0.04),
+      inset -1px 0 0 hsla(265, 35%, 55%, 0.03);
   }
 
   .glass-subtle::before {
     content: "";
     position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      160deg,
+      hsla(0, 0%, 100%, 0.25) 0%,
+      hsla(0, 0%, 100%, 0.08) 20%,
+      hsla(220, 50%, 70%, 0.05) 35%,
+      transparent 55%,
+      transparent 70%,
+      hsla(265, 45%, 60%, 0.07) 85%,
+      hsla(265, 55%, 68%, 0.14) 100%
+    );
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .glass-subtle::after {
+    content: "";
+    position: absolute;
     inset: 0;
     border-radius: inherit;
     background: linear-gradient(135deg, hsla(0, 0%, 100%, 0.03) 0%, transparent 50%, hsla(270, 40%, 60%, 0.02) 100%);
-    background-size: 100% 100%;
-    background-repeat: no-repeat;
     pointer-events: none;
     z-index: 0;
   }
 
-
-  .glass-subtle > *{
+  .glass-subtle > * {
     position: relative;
     z-index: 2;
   }

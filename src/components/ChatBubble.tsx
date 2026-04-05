@@ -1,8 +1,8 @@
-import { useState, useRef, useCallback } from "react";
-import { MessageCircle, X, Send, Loader2, Square } from "lucide-react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { MessageCircle, X, Send, Loader2, Square, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { runChatTask } from "@/lib/browserUseChat";
+import { runChatTask, stopSession } from "@/lib/browserUseChat";
 import { getSettings } from "@/components/SettingsPanel";
 
 interface Message {
@@ -11,13 +11,37 @@ interface Message {
   content: string;
 }
 
-export function ChatBubble() {
+interface ChatBubbleProps {
+  onOpenChange?: (open: boolean) => void;
+}
+
+export function ChatBubble({ onOpenChange }: ChatBubbleProps) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const idRef = useRef(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const toggleOpen = useCallback((value: boolean) => {
+    setOpen(value);
+    onOpenChange?.(value);
+  }, [onOpenChange]);
+
+  const handleClose = useCallback(async () => {
+    abortRef.current?.abort();
+    setLoading(false);
+    await stopSession();
+    toggleOpen(false);
+  }, [toggleOpen]);
+
+  // Auto-scroll to bottom on new messages
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages, loading]);
 
   const handleSend = useCallback(async () => {
     const text = input.trim();
@@ -31,6 +55,9 @@ export function ChatBubble() {
       ]);
       return;
     }
+
+    // If not open in full screen yet, open it
+    if (!open) toggleOpen(true);
 
     const userMsg: Message = { id: ++idRef.current, role: "user", content: text };
     setMessages((prev) => [...prev, userMsg]);
@@ -60,86 +87,113 @@ export function ChatBubble() {
       setLoading(false);
       abortRef.current = null;
     }
-  }, [input, loading]);
+  }, [input, loading, open, toggleOpen]);
 
   const handleCancel = useCallback(() => {
     abortRef.current?.abort();
     setLoading(false);
   }, []);
 
-  return (
-    <div className="fixed bottom-5 right-5 z-50 flex flex-col items-end gap-3">
-      {open && (
-        <div className="glass rounded-none fixed inset-0 w-full h-full flex flex-col shadow-2xl animate-fade-in overflow-hidden">
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
-            <div className="flex items-center gap-2">
-              <MessageCircle className="h-4 w-4 text-primary" />
-              <span className="text-sm font-semibold text-foreground font-display">Assistant</span>
-            </div>
-            <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground transition-colors">
-              <X className="h-4 w-4" />
-            </button>
+  // Full-screen chat view
+  if (open) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col bg-background/95 backdrop-blur-xl animate-fade-in">
+        {/* Header */}
+        <header className="glass-subtle flex items-center gap-3 px-6 py-4 border-b border-border/30 shrink-0">
+          <button onClick={handleClose} className="text-muted-foreground hover:text-foreground transition-colors">
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <div className="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center">
+            <MessageCircle className="h-4 w-4 text-primary" />
           </div>
+          <div className="flex-1">
+            <h1 className="text-sm font-semibold text-foreground font-display">Assistant</h1>
+            <p className="text-xs text-muted-foreground">
+              {loading ? "Running task…" : "Session active — send commands anytime"}
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={handleClose} className="gap-1.5 text-xs">
+            <X className="h-3.5 w-3.5" />
+            Close Session
+          </Button>
+        </header>
 
-          {/* Messages */}
-          <ScrollArea className="flex-1 px-3 py-3">
+        {/* Messages area */}
+        <div ref={scrollRef} className="flex-1 overflow-auto px-6 py-6">
+          <div className="max-w-2xl mx-auto space-y-4">
             {messages.length === 0 && (
-              <p className="text-xs text-muted-foreground text-center mt-8">
-                Ask me anything — I'll run it as a task via Browser Use.
-              </p>
+              <div className="text-center mt-24">
+                <div className="h-14 w-14 rounded-2xl bg-primary/15 flex items-center justify-center mx-auto mb-4">
+                  <MessageCircle className="h-7 w-7 text-primary" />
+                </div>
+                <h2 className="text-lg font-semibold text-foreground font-display mb-2">What can I help with?</h2>
+                <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                  Type a task below and I'll run it via Browser Use. The session stays open so you can send follow-up commands.
+                </p>
+              </div>
             )}
-            <div className="space-y-2.5">
-              {messages.map((msg) => (
+            {messages.map((msg) => (
+              <div
+                key={msg.id}
+                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+              >
                 <div
-                  key={msg.id}
-                  className={`text-xs leading-relaxed max-w-[90%] rounded-lg px-3 py-2 whitespace-pre-wrap ${
+                  className={`text-sm leading-relaxed max-w-[75%] rounded-xl px-4 py-3 whitespace-pre-wrap ${
                     msg.role === "user"
-                      ? "ml-auto bg-primary/20 text-foreground"
-                      : "mr-auto bg-muted/50 text-foreground"
+                      ? "bg-primary/20 text-foreground"
+                      : "glass text-foreground"
                   }`}
                 >
                   {msg.content}
                 </div>
-              ))}
-              {loading && (
-                <div className="mr-auto flex items-center gap-1.5 text-xs text-muted-foreground px-3 py-2">
-                  <Loader2 className="h-3 w-3 animate-spin" />
+              </div>
+            ))}
+            {loading && (
+              <div className="flex justify-start">
+                <div className="glass rounded-xl px-4 py-3 flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
                   Running task…
                 </div>
-              )}
-            </div>
-          </ScrollArea>
+              </div>
+            )}
+          </div>
+        </div>
 
-          {/* Input */}
-          <div className="px-3 py-2.5 border-t border-border/30 flex items-center gap-2">
+        {/* Input bar */}
+        <div className="glass-subtle border-t border-border/30 px-6 py-4 shrink-0">
+          <div className="max-w-2xl mx-auto flex items-center gap-3">
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
-              placeholder="Type a task…"
+              placeholder="Type a command…"
               disabled={loading}
-              className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+              autoFocus
+              className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none py-2"
             />
             {loading ? (
-              <Button size="icon" variant="ghost" onClick={handleCancel} className="h-7 w-7 shrink-0 text-destructive">
-                <Square className="h-3.5 w-3.5" />
+              <Button size="icon" variant="outline" onClick={handleCancel} className="h-9 w-9 shrink-0 text-destructive border-destructive/30">
+                <Square className="h-4 w-4" />
               </Button>
             ) : (
-              <Button size="icon" variant="ghost" onClick={handleSend} disabled={!input.trim()} className="h-7 w-7 shrink-0 text-primary">
-                <Send className="h-3.5 w-3.5" />
+              <Button size="icon" onClick={handleSend} disabled={!input.trim()} className="h-9 w-9 shrink-0">
+                <Send className="h-4 w-4" />
               </Button>
             )}
           </div>
         </div>
-      )}
+      </div>
+    );
+  }
 
-      {/* Floating button */}
+  // Floating button
+  return (
+    <div className="fixed bottom-5 right-5 z-50">
       <button
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => toggleOpen(true)}
         className="h-12 w-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground shadow-lg hover:scale-105 transition-transform glow-primary"
       >
-        {open ? <X className="h-5 w-5" /> : <MessageCircle className="h-5 w-5" />}
+        <MessageCircle className="h-5 w-5" />
       </button>
     </div>
   );

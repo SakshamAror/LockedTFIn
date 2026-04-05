@@ -14,8 +14,10 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["Urbanist", "ui-sans-serif", "system-ui", "sans-serif"],
-        display: ["Urbanist", "ui-sans-serif", "system-ui", "sans-serif"],
+        sans: ["'JetBrains Mono'", "monospace"],
+        display: ["'JetBrains Mono'", "monospace"],
+        mono: ["'JetBrains Mono'", "monospace"],
+      },
       },
       colors: {
         border: "hsl(var(--border))",

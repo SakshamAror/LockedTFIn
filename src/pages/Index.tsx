@@ -16,6 +16,7 @@ import { fetchCalendarEvents, type CalendarEvent } from "@/lib/browserUseCalenda
 import { fetchCanvasAssignments, type CanvasAssignment } from "@/lib/browserUseCanvas";
 import { fetchGradescopeAssignments, type GradescopeAssignment } from "@/lib/browserUseGradescope";
 import { fetchWebRegSchedule, type WebRegCourse } from "@/lib/browserUseWebReg";
+import { pushCoursesToCalendar, pushAssignmentsToCalendar } from "@/lib/browserUsePushToCalendar";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import type { Email, TimeRange, EmailCount } from "@/components/EmailCard";
@@ -251,7 +252,6 @@ export default function Index() {
     const termLabel = currentTermLabel[currentTermCode] ?? currentTermCode;
     toast.info(`Adding ${webRegCourses.length} class sections to Google Calendar…`, { duration: 12000 });
     try {
-      const { pushCoursesToCalendar } = await import("@/lib/browserUsePushToCalendar");
       const added = await pushCoursesToCalendar(webRegCourses, termLabel, webRegPushAbortRef.current.signal);
       toast.success(`Added ${added} event${added !== 1 ? "s" : ""} to Google Calendar!`);
     } catch (err: any) {
@@ -274,7 +274,6 @@ export default function Index() {
     assignmentsPushAbortRef.current = new AbortController();
     toast.info("Adding assignments to Google Calendar…", { duration: 12000 });
     try {
-      const { pushAssignmentsToCalendar } = await import("@/lib/browserUsePushToCalendar");
       const allAssignments = [
         ...assignments.map((a: CanvasAssignment) => ({ ...a, source: "canvas" as const })),
         ...gsAssignments,

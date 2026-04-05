@@ -97,7 +97,7 @@ export default function Index() {
     eventsAbortRef.current = new AbortController();
     toast.info("Fetching calendar events…");
     try {
-      const fetched = await fetchCalendarEvents(eventsAbortRef.current.signal);
+      const fetched = await fetchCalendarEvents(eventsAbortRef.current.signal, eventRange);
       setEvents(fetched);
       setEventsHasFetched(true);
       if (fetched.length > 0) toast.success(`Found ${fetched.length} event${fetched.length !== 1 ? "s" : ""}.`);
@@ -112,7 +112,7 @@ export default function Index() {
       setEventsLoading(false);
       eventsAbortRef.current = null;
     }
-  }, []);
+  }, [eventRange]);
 
   // Canvas fetch
   const handleFetchAssignments = useCallback(async () => {
@@ -126,7 +126,7 @@ export default function Index() {
     assignmentsAbortRef.current = new AbortController();
     toast.info("Fetching Canvas assignments… Approve Duo 2FA on your device.", { duration: 10000 });
     try {
-      const fetched = await fetchCanvasAssignments(assignmentsAbortRef.current.signal);
+      const fetched = await fetchCanvasAssignments(assignmentsAbortRef.current.signal, assignmentRange);
       setAssignments(fetched);
       setAssignmentsHasFetched(true);
       if (fetched.length > 0) toast.success(`Found ${fetched.length} assignment${fetched.length !== 1 ? "s" : ""}.`);
@@ -141,7 +141,7 @@ export default function Index() {
       setAssignmentsLoading(false);
       assignmentsAbortRef.current = null;
     }
-  }, [isCanvasConnected]);
+  }, [isCanvasConnected, assignmentRange]);
 
   // Update All
   const isAnyLoading = emailLoading || eventsLoading || assignmentsLoading;

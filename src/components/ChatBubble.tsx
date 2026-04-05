@@ -56,16 +56,6 @@ export function ChatBubble({ onOpenChange }: ChatBubbleProps) {
     }
   }, [messages, loading]);
 
-  const isGmailOrCalendarTask = useCallback((text: string) => {
-    const keywords = [
-      "email", "mail", "gmail", "inbox", "send", "reply", "forward", "draft", "unread", "message",
-      "calendar", "event", "meeting", "schedule", "appointment", "invite", "rsvp", "reminder",
-      "reschedule", "cancel meeting", "create event", "check my",
-    ];
-    const lower = text.toLowerCase();
-    return keywords.some((kw) => lower.includes(kw));
-  }, []);
-
   const handleSend = useCallback(async () => {
     const text = input.trim();
     if (!text || loading) return;
@@ -79,20 +69,11 @@ export function ChatBubble({ onOpenChange }: ChatBubbleProps) {
       return;
     }
 
-    // If not open in full screen yet, open it
     if (!open) toggleOpen(true);
 
     const userMsg: Message = { id: ++idRef.current, role: "user", content: text };
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
-
-    if (!isGmailOrCalendarTask(text)) {
-      setMessages((prev) => [
-        ...prev,
-        { id: ++idRef.current, role: "assistant", content: "I can only help with Gmail and Google Calendar tasks right now. Try asking me to send an email, check your inbox, create a calendar event, or manage your meetings." },
-      ]);
-      return;
-    }
 
     setLoading(true);
     abortRef.current = new AbortController();
@@ -119,7 +100,7 @@ export function ChatBubble({ onOpenChange }: ChatBubbleProps) {
       setLoading(false);
       abortRef.current = null;
     }
-  }, [input, loading, open, toggleOpen, isGmailOrCalendarTask]);
+  }, [input, loading, open, toggleOpen]);
 
   const handleCancel = useCallback(() => {
     abortRef.current?.abort();

@@ -97,8 +97,8 @@ export default function Index() {
         </button>
       </aside>
 
-      <main className="flex-1 overflow-auto h-screen">
-        <header className="glass-subtle rounded-none border-x-0 border-t-0 flex items-center justify-between px-8 py-5">
+      <main className="flex-1 flex flex-col h-screen overflow-hidden">
+        <header className="glass-subtle rounded-none border-x-0 border-t-0 flex items-center justify-between px-8 py-5 shrink-0">
           <div>
             <h1 className="text-xl font-semibold text-foreground font-display">Good morning, {userName}</h1>
             <p className="text-xs text-muted-foreground mt-0.5">
@@ -113,7 +113,7 @@ export default function Index() {
           )}
         </header>
 
-        <div className="p-8">
+        <div className="flex-1 overflow-auto p-8">
           {!isConnected ? (
             <div className="glass rounded-xl p-10 text-center max-w-lg mx-auto mt-12">
               <div className="h-14 w-14 rounded-2xl bg-primary/15 flex items-center justify-center mx-auto mb-4">

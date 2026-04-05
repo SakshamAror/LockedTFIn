@@ -66,19 +66,20 @@
     @apply text-foreground font-sans antialiased;
     font-family: 'Urbanist', sans-serif;
     background-image: url('/images/wallpaper.jpg');
-    background-size: 110%;
+    background-size: 120%;
     background-position: center;
     background-attachment: fixed;
     background-repeat: no-repeat;
-    animation: bg-drift 30s ease-in-out infinite alternate;
+    animation: bg-drift 60s ease-in-out infinite;
   }
 
   @keyframes bg-drift {
-    0% { background-position: 30% 30%; }
-    25% { background-position: 70% 40%; }
-    50% { background-position: 50% 70%; }
-    75% { background-position: 40% 30%; }
-    100% { background-position: 60% 60%; }
+    0% { background-position: 40% 40%; }
+    20% { background-position: 60% 35%; }
+    40% { background-position: 55% 60%; }
+    60% { background-position: 35% 55%; }
+    80% { background-position: 45% 35%; }
+    100% { background-position: 40% 40%; }
   }
 
   body::before {

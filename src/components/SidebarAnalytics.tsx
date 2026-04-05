@@ -31,7 +31,7 @@ export function SidebarAnalytics({ events, assignments, lastUpdated }: SidebarAn
       <div className="glass rounded-lg p-3">
         <div className="flex items-center gap-2 mb-1.5">
           <Calendar className="h-3 w-3 text-primary" />
-          <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Next Event</span>
+          <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider font-medium">Next Event</span>
         </div>
         {nextEvent ? (
           <div>

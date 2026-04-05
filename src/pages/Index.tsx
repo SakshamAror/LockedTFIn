@@ -79,7 +79,7 @@ export default function Index() {
   };
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen relative z-10">
       <aside className="w-56 shrink-0 sticky top-0 h-screen glass-subtle flex flex-col p-4 border-r border-border/50">
         <div className="flex items-center gap-2.5 px-2 mb-8">
           <div className="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center">

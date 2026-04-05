@@ -28,14 +28,14 @@ export function FloatingParticles() {
     resize();
     window.addEventListener("resize", resize);
 
-    const count = 40;
+    const count = 120;
     particles.current = Array.from({ length: count }, () => ({
       x: Math.random() * canvas.width,
       y: Math.random() * canvas.height,
-      vx: (Math.random() - 0.5) * 0.3,
-      vy: (Math.random() - 0.5) * 0.3,
-      radius: Math.random() * 2 + 0.5,
-      opacity: Math.random() * 0.3 + 0.05,
+      vx: (Math.random() - 0.5) * 0.15,
+      vy: (Math.random() - 0.5) * 0.15,
+      radius: Math.random() * 1.2 + 0.2,
+      opacity: Math.random() * 0.2 + 0.03,
       phase: Math.random() * Math.PI * 2,
     }));
 

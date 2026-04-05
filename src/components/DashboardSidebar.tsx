@@ -21,7 +21,7 @@ export function DashboardSidebar() {
         <div className="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center">
           <Inbox className="h-4 w-4 text-primary" />
         </div>
-        <span className="text-sm font-semibold text-foreground tracking-tight">LockeTFIn</span>
+        <span className="text-sm font-semibold text-foreground tracking-tight">LockedTFIn</span>
       </div>
 
       <nav className="flex-1 space-y-1">

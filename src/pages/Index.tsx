@@ -18,6 +18,8 @@ export default function Index() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [timeRange, setTimeRange] = useState<TimeRange>("today");
+  const [emailCount, setEmailCount] = useState<EmailCount>(5);
   const abortRef = useRef<AbortController | null>(null);
 
   const { apiKey, email } = getSettings();

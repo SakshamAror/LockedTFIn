@@ -3,6 +3,7 @@ import { Mail, Inbox, RefreshCw, Loader2, Settings, XCircle, AlertTriangle } fro
 import { EmailCard } from "@/components/EmailCard";
 import { EmailSkeleton } from "@/components/EmailSkeleton";
 import { ImportanceFunnel } from "@/components/ImportanceFunnel";
+import { ChatBubble } from "@/components/ChatBubble";
 import { CalendarEvents } from "@/components/CalendarEvents";
 import { SettingsPanel, getSettings } from "@/components/SettingsPanel";
 import { fetchEmails } from "@/lib/browserUse";

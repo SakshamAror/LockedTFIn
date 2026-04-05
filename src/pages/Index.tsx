@@ -274,47 +274,8 @@ export default function Index() {
                 </span>
               </div>
 
-              {emailError && !emailLoading && (
-                <div className="glass rounded-lg p-5 mb-4 border border-destructive/20 animate-fade-in">
-                  <div className="flex items-start gap-3">
-                    <div className="h-8 w-8 rounded-lg bg-destructive/15 flex items-center justify-center shrink-0">
-                      <AlertTriangle className="h-4 w-4 text-destructive" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground mb-1">Something went wrong</p>
-                      <p className="text-xs text-muted-foreground mb-3">{emailError}</p>
-                      <Button size="sm" variant="outline" onClick={handleGetEmails} className="gap-1.5">
-                        <RefreshCw className="h-3 w-3" />
-                        Try again
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {emailLoading && <EmailSkeleton count={5} />}
-
-              {!emailLoading && emails.length === 0 && !emailError && (
-                <div className="glass rounded-lg p-12 text-center">
-                  <Mail className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-sm text-muted-foreground">
-                    {emailHasFetched
-                      ? "No important emails today — you're all caught up!"
-                      : 'Click "Update All" or "Refetch" to fetch your important emails.'}
-                  </p>
-                </div>
-              )}
-
-              {!emailLoading && emails.length > 0 && (
-                <div className="space-y-2">
-                  {emails.map((email, i) => (
-                    <EmailCard key={email.id} email={email} index={i} />
-                  ))}
-                </div>
-              )}
-
               {/* Filters & Refetch */}
-              <div className="glass rounded-lg p-4 mt-4 animate-fade-in">
+              <div className="glass rounded-lg p-4 mb-4 animate-fade-in">
                 <div className="flex flex-wrap items-center gap-4">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
@@ -362,6 +323,45 @@ export default function Index() {
                   </Button>
                 </div>
               </div>
+
+              {emailError && !emailLoading && (
+                <div className="glass rounded-lg p-5 mb-4 border border-destructive/20 animate-fade-in">
+                  <div className="flex items-start gap-3">
+                    <div className="h-8 w-8 rounded-lg bg-destructive/15 flex items-center justify-center shrink-0">
+                      <AlertTriangle className="h-4 w-4 text-destructive" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground mb-1">Something went wrong</p>
+                      <p className="text-xs text-muted-foreground mb-3">{emailError}</p>
+                      <Button size="sm" variant="outline" onClick={handleGetEmails} className="gap-1.5">
+                        <RefreshCw className="h-3 w-3" />
+                        Try again
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {emailLoading && <EmailSkeleton count={5} />}
+
+              {!emailLoading && emails.length === 0 && !emailError && (
+                <div className="glass rounded-lg p-12 text-center">
+                  <Mail className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-sm text-muted-foreground">
+                    {emailHasFetched
+                      ? "No important emails today — you're all caught up!"
+                      : 'Click "Update All" or "Refetch" to fetch your important emails.'}
+                  </p>
+                </div>
+              )}
+
+              {!emailLoading && emails.length > 0 && (
+                <div className="space-y-2">
+                  {emails.map((email, i) => (
+                    <EmailCard key={email.id} email={email} index={i} />
+                  ))}
+                </div>
+              )}
             </>
           )}
         </div>

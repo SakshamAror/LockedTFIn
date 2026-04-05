@@ -23,7 +23,7 @@ export function SidebarAnalytics({ events, assignments, lastUpdated }: SidebarAn
 
   return (
     <div className="space-y-3 mt-4">
-      <h3 className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider font-display px-1">
+      <h3 className="text-[10px] font-mono font-medium text-muted-foreground uppercase tracking-wider px-1">
         At a Glance
       </h3>
 

@@ -28,7 +28,7 @@ export function FloatingParticles() {
     resize();
     window.addEventListener("resize", resize);
 
-    const count = 200;
+    const count = 100;
     particles.current = Array.from({ length: count }, () => ({
       x: Math.random() * canvas.width,
       y: Math.random() * canvas.height,

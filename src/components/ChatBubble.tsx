@@ -70,7 +70,7 @@ export function ChatBubble() {
   return (
     <div className="fixed bottom-5 right-5 z-50 flex flex-col items-end gap-3">
       {open && (
-        <div className="glass rounded-xl w-96 h-[540px] flex flex-col shadow-2xl animate-fade-in overflow-hidden">
+        <div className="glass rounded-none fixed inset-0 w-full h-full flex flex-col shadow-2xl animate-fade-in overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
             <div className="flex items-center gap-2">

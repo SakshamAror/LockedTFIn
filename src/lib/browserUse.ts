@@ -194,12 +194,17 @@ function parseMessages(messages: GmailMessage[]): Email[] {
       ? new Date(msg.messageTimestamp).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
       : "";
 
+    const date = msg.messageTimestamp
+      ? new Date(msg.messageTimestamp).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+      : "";
+
     return {
       id: index + 1,
       sender: msg.sender || "Unknown",
       subject: msg.preview?.subject || msg.subject || "No subject",
       preview: previewText,
       time,
+      date,
       importance,
       unread: msg.labelIds?.includes("UNREAD") ?? true,
       category: inferCategory(msg.labelIds || [], msg.subject || ""),

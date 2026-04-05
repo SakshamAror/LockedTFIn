@@ -200,6 +200,7 @@ export default function Index() {
       </main>
 
       <SettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <ChatBubble />
     </div>
   );
 }

@@ -56,6 +56,24 @@ export function ChatBubble({ onOpenChange }: ChatBubbleProps) {
     }
   }, [messages, loading]);
 
+  const handleSend = useCallback(async () => {
+    const text = input.trim();
+    if (!text || loading) return;
+
+    const { apiKey } = getSettings();
+    if (!apiKey) {
+      setMessages((prev) => [
+        ...prev,
+        { id: ++idRef.current, role: "assistant", content: "Please set your API key in Settings first." },
+      ]);
+      return;
+    }
+
+    if (!open) toggleOpen(true);
+
+    const userMsg: Message = { id: ++idRef.current, role: "user", content: text };
+    setMessages((prev) => [...prev, userMsg]);
+    setInput("");
 
     setLoading(true);
     abortRef.current = new AbortController();
@@ -82,7 +100,7 @@ export function ChatBubble({ onOpenChange }: ChatBubbleProps) {
       setLoading(false);
       abortRef.current = null;
     }
-  }, [input, loading, open, toggleOpen, isGmailOrCalendarTask]);
+  }, [input, loading, open, toggleOpen]);
 
   const handleCancel = useCallback(() => {
     abortRef.current?.abort();

@@ -32,6 +32,7 @@ export default function Index() {
   const [eventsLoading, setEventsLoading] = useState(false);
   const [eventsHasFetched, setEventsHasFetched] = useState(false);
   const [eventsError, setEventsError] = useState<string | null>(null);
+  const [eventRange, setEventRange] = useState<EventRange>(7);
   const eventsAbortRef = useRef<AbortController | null>(null);
 
   // Canvas state

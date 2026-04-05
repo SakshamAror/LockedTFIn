@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { Mail, Inbox, RefreshCw, Loader2, Settings, XCircle, AlertTriangle } from "lucide-react";
+import { Mail, Inbox, RefreshCw, Loader2, Settings, XCircle, AlertTriangle, Calendar, Hash } from "lucide-react";
 import { EmailCard } from "@/components/EmailCard";
 import { EmailSkeleton } from "@/components/EmailSkeleton";
 import { ImportanceFunnel } from "@/components/ImportanceFunnel";
@@ -10,7 +10,7 @@ import { SettingsPanel, getSettings } from "@/components/SettingsPanel";
 import { fetchEmails } from "@/lib/browserUse";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import type { Email } from "@/components/EmailCard";
+import type { Email, TimeRange, EmailCount } from "@/components/EmailCard";
 
 export default function Index() {
   const [emails, setEmails] = useState<Email[]>([]);

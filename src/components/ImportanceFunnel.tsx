@@ -1,4 +1,4 @@
-import { Mail, ShieldAlert } from "lucide-react";
+import { Mail, ShieldAlert, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface EmailStats {
@@ -12,38 +12,48 @@ export function ImportanceFunnel({ emails }: { emails: EmailStats[] }) {
 
   const stats = [
     {
-      label: "Unread today",
+      label: "Unread",
       count: unreadCount,
       icon: Mail,
-      colorClass: "text-primary",
-      bgClass: "bg-primary/15 border-primary/25",
+      color: "text-primary",
+      bg: "bg-primary/10",
+      ring: "ring-primary/20",
+      glow: unreadCount > 0 ? "shadow-[0_0_12px_-3px_hsl(var(--primary)/0.3)]" : "",
     },
     {
       label: "Critical",
       count: criticalCount,
       icon: ShieldAlert,
-      colorClass: "text-destructive",
-      bgClass: "bg-destructive/15 border-destructive/25",
+      color: "text-destructive",
+      bg: "bg-destructive/10",
+      ring: "ring-destructive/20",
+      glow: criticalCount > 0 ? "shadow-[0_0_12px_-3px_hsl(var(--destructive)/0.3)]" : "",
     },
   ];
 
   return (
-    <div className="glass rounded-lg p-5 animate-fade-in">
-      <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-4 font-display">
-        Today's Summary
+    <div className="rounded-xl p-4 bg-muted/[0.08] border border-border/20 animate-fade-in">
+      <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.15em] mb-3 flex items-center gap-1.5">
+        <TrendingUp className="h-2.5 w-2.5 text-primary/60" />
+        Today
       </h3>
-      <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2">
         {stats.map((stat) => (
-          <div key={stat.label} className="flex items-center gap-3">
-            <div className={cn("h-7 w-7 rounded-md border flex items-center justify-center shrink-0", stat.bgClass)}>
-              <stat.icon className={cn("h-3.5 w-3.5", stat.colorClass)} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <span className="text-xs text-muted-foreground">{stat.label}</span>
-              <p className={cn("text-lg font-semibold font-display", stat.count > 0 ? "text-foreground" : "text-muted-foreground")}>
-                {stat.count}
-              </p>
-            </div>
+          <div
+            key={stat.label}
+            className={cn(
+              "rounded-lg p-3 ring-1 transition-all duration-300",
+              stat.bg, stat.ring, stat.glow
+            )}
+          >
+            <stat.icon className={cn("h-3.5 w-3.5 mb-2", stat.color)} />
+            <p className={cn(
+              "text-xl font-bold font-display tabular-nums leading-none",
+              stat.count > 0 ? "text-foreground" : "text-muted-foreground/40"
+            )}>
+              {stat.count}
+            </p>
+            <span className="text-[10px] text-muted-foreground mt-1 block">{stat.label}</span>
           </div>
         ))}
       </div>

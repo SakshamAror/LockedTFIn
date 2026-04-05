@@ -1,4 +1,4 @@
-import { BookOpen, RefreshCw, Loader2, XCircle, MapPin, Clock, AlertTriangle, User } from "lucide-react";
+import { BookOpen, RefreshCw, Loader2, XCircle, MapPin, Clock, AlertTriangle, User, CalendarPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { WebRegCourse, CourseType } from "@/lib/browserUseWebReg";
@@ -102,6 +102,8 @@ interface WebRegScheduleProps {
   onTermChange: (t: TermCode) => void;
   onFetch: () => void;
   onCancel: () => void;
+  onPushToCalendar: () => void;
+  pushLoading: boolean;
 }
 
 export function WebRegSchedule({
@@ -113,6 +115,8 @@ export function WebRegSchedule({
   onTermChange,
   onFetch,
   onCancel,
+  onPushToCalendar,
+  pushLoading,
 }: WebRegScheduleProps) {
   const weekly = courses.filter((c) => !ONE_TIME.includes(c.type));
   const oneTime = courses
@@ -181,12 +185,23 @@ export function WebRegSchedule({
             variant="outline"
             size="sm"
             onClick={onFetch}
-            disabled={loading}
+            disabled={loading || pushLoading}
             className="gap-1.5 h-7 text-xs"
           >
             {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
             {loading ? "Fetching…" : hasFetched ? "Refresh" : "Load Schedule"}
           </Button>
+          {hasFetched && courses.length > 0 && (
+            <Button
+              size="sm"
+              onClick={onPushToCalendar}
+              disabled={loading || pushLoading}
+              className="gap-1.5 h-7 text-xs bg-indigo-600 hover:bg-indigo-500 text-white border-0"
+            >
+              {pushLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <CalendarPlus className="h-3 w-3" />}
+              {pushLoading ? "Adding…" : "Add to Calendar"}
+            </Button>
+          )}
         </div>
       </div>
 

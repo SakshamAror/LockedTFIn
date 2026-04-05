@@ -60,6 +60,8 @@ export default function Index() {
   const [webRegError, setWebRegError] = useState<string | null>(null);
   const [webRegTerm, setWebRegTerm] = useState<TermCode>("SP26");
   const webRegAbortRef = useRef<AbortController | null>(null);
+  const [webRegPushLoading, setWebRegPushLoading] = useState(false);
+  const webRegPushAbortRef = useRef<AbortController | null>(null);
 
   // Shared state
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -221,6 +223,30 @@ export default function Index() {
       webRegAbortRef.current = null;
     }
   }, [isCanvasConnected, webRegTerm]);
+
+  // WebReg push to calendar
+  const handlePushWebRegToCalendar = useCallback(async () => {
+    if (!isConnected) {
+      toast.error("Please configure your API key and email in Setup first.");
+      setSettingsOpen(true);
+      return;
+    }
+    setWebRegPushLoading(true);
+    webRegPushAbortRef.current = new AbortController();
+    const termLabel = { FA25: "Fall 2025", WI26: "Winter 2026", SP26: "Spring 2026", FA26: "Fall 2026" }[webRegTerm] ?? webRegTerm;
+    toast.info(`Adding ${webRegCourses.length} class sections to Google Calendar…`, { duration: 12000 });
+    try {
+      const { pushCoursesToCalendar } = await import("@/lib/browserUsePushToCalendar");
+      const added = await pushCoursesToCalendar(webRegCourses, termLabel, webRegPushAbortRef.current.signal);
+      toast.success(`Added ${added} event${added !== 1 ? "s" : ""} to Google Calendar!`);
+    } catch (err: any) {
+      if (err.name === "AbortError") return;
+      toast.error(err.message || "Failed to push schedule to calendar.");
+    } finally {
+      setWebRegPushLoading(false);
+      webRegPushAbortRef.current = null;
+    }
+  }, [isConnected, webRegCourses, webRegTerm]);
 
   // Update All
   const isAnyLoading = emailLoading || eventsLoading || assignmentsLoading || gsLoading || webRegLoading;
@@ -421,6 +447,8 @@ export default function Index() {
                 onTermChange={setWebRegTerm}
                 onFetch={handleFetchWebReg}
                 onCancel={() => { webRegAbortRef.current?.abort(); setWebRegLoading(false); }}
+                onPushToCalendar={handlePushWebRegToCalendar}
+                pushLoading={webRegPushLoading}
               />
 
               {/* Filters & Refetch */}

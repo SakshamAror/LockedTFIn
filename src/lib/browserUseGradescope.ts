@@ -10,7 +10,9 @@ async function stopSession(sessionId: string, apiKey: string) {
       method: "PUT",
       headers: { "X-Browser-Use-API-Key": apiKey },
     });
-  } catch { /* best-effort */ }
+  } catch {
+    /* best-effort */
+  }
 }
 
 export interface GradescopeAssignment {
@@ -37,71 +39,25 @@ interface BrowserUseSession {
 
 export async function fetchGradescopeAssignments(
   signal?: AbortSignal,
-  days: number = 14
+  days: number = 14,
 ): Promise<GradescopeAssignment[]> {
   const { apiKey, canvasUsername, canvasPassword } = getSettings();
 
   if (!apiKey) throw new Error("Please configure your Browser Use API key in Settings first.");
-  if (!canvasUsername || !canvasPassword)
-    throw new Error("Please enter your UCSD SSO credentials in Settings first.");
+  if (!canvasUsername || !canvasPassword) throw new Error("Please enter your UCSD SSO credentials in Settings first.");
 
   const task = `
-You are automating a browser to fetch Gradescope assignments. Follow these steps EXACTLY.
+Login to Gradescope via SSO:
+1. Go to https://www.gradescope.com/saml, select "UC San Diego", complete UCSD SSO login with username "${canvasUsername}" / password "${canvasPassword}". If a "Student SSO" dropdown exists, select it first.
+2. On Duo 2FA page: a push is auto-sent — poll URL every 2s up to 3min until redirected to gradescope.com. Click "Yes, this is my device" / "Trust this browser" if shown.
+3. If login fails, return: [{"error": "Invalid UCSD credentials."}]
 
-## STEP 1 — Login via SSO
-Navigate to https://www.gradescope.com/saml
-Wait for the page to load.
-Find and click "UC San Diego" from the institution list.
-Wait for the UCSD SSO login page.
+Scrape assignments:
+4. Go to https://www.gradescope.com/, collect all course IDs from /courses/{id} links where course name contains "[SP26]" or "Spring 2026".
+5. For each course, go to https://www.gradescope.com/courses/{id} and extract all assignments. Per assignment capture: title, full course name, instructor, due date (<time> with aria-label "Due..."), late due date (<time> with aria-label "Late Due...") or null, status, score, and URL.
 
-## STEP 2 — UCSD SSO Login
-If there is a dropdown/select with "Student SSO", select that option.
-Fill the username field with: "${canvasUsername}"
-Fill the password field with: "${canvasPassword}"
-Click the login/submit button.
-Wait for the page to load.
-
-## STEP 3 — Duo 2FA
-After login, you may be redirected to a Duo Security page.
-A push notification is automatically sent to the user's phone.
-Wait silently — poll the current URL every 2 seconds for up to 3 minutes.
-If you see a "Yes, this is my device" or "Trust this browser" button, click it.
-Wait until the URL changes to gradescope.com (not duosecurity.com).
-
-## STEP 4 — Find current term courses
-Navigate to https://www.gradescope.com/
-Look for courses that contain "[SP26]" or "Spring 2026" in their name.
-Collect all course IDs from links like /courses/{id}.
-
-## STEP 5 — Scrape assignments from each course
-For each course, navigate to https://www.gradescope.com/courses/{id}
-Extract all assignments from the assignments table. For each assignment get:
-- name/title
-- course name (full name with course code)
-- instructor name
-- due date (from the <time> element with "Due" in aria-label)
-- late due date (from the <time> element with "Late Due" in aria-label), if any
-- status text (submitted, no submission, etc.)
-- score (if graded)
-- URL to the assignment
-
-## STEP 6 — Return JSON
-Return ONLY a raw JSON array (no markdown fences, no explanation) with objects:
-{
-  "title": string,
-  "course": string,
-  "instructor": string,
-  "due_date": string (formatted as "Mon, Apr 07 2026 at 06:59 AM UTC", or "N/A"),
-  "late_due_date": string or null,
-  "points": string or "N/A",
-  "submitted": boolean,
-  "graded": boolean,
-  "url": string
-}
-
-Sort by due_date ascending.
-Only include assignments due within the next ${days} days from today, or assignments with no due date.
-If login fails return: [{"error": "Invalid UCSD credentials."}]
+Return ONLY a raw JSON array (no markdown, no explanation), sorted by due_date ascending, including only assignments due within ${days} days from today or with no due date:
+[{"title":string,"course":string,"instructor":string,"due_date":"Mon, Apr 07 2026 at 06:59 AM UTC" or "N/A","late_due_date":string|null,"points":string|"N/A","submitted":boolean,"graded":boolean,"url":string}]
 `;
 
   const createRes = await fetch(`${BASE_URL}/sessions`, {

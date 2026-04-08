@@ -49,7 +49,7 @@ export async function fetchGradescopeAssignments(
   const task = `
 Login to Gradescope via SSO:
 1. Go to https://www.gradescope.com/saml, select "UC San Diego", complete UCSD SSO login with username "${canvasUsername}" / password "${canvasPassword}". If a "Student SSO" dropdown exists, select it first.
-2. On Duo 2FA page: a push is auto-sent — poll URL every 2s up to 3min until redirected to gradescope.com. Click "Yes, this is my device" / "Trust this browser" if shown.
+2. On Duo 2FA page: a push is auto-sent — poll URL every 2s up to 3min until redirected to gradescope.com. Click "No, other people use this device" if shown.
 3. If login fails, return: [{"error": "Invalid UCSD credentials."}]
 
 Scrape assignments:

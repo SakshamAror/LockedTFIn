@@ -177,7 +177,7 @@ export async function pushCoursesToCalendar(
     const endTime = fmt24(c.endHH, c.endMM);
     const startDate = fmtDate(c.startDate ?? new Date().toISOString().slice(0, 10));
     const finalDate = courseFinalDate[`${c.subj}${c.code}`];
-    const untilDate = finalDate ? dayBefore(finalDate) : (c.endDate ? fmtDate(c.endDate) : startDate);
+    const untilDate = finalDate ? dayBefore(finalDate) : startDate;
 
     eventIndex++;
     classInstructions.push(

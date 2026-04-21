@@ -1,4 +1,4 @@
-# 🔒 Locked In
+# 🔒 Locked The Forever In
 
 > A unified student command center for UCSD — Canvas, WebReg, Gmail, and Google Calendar in one screen.
 

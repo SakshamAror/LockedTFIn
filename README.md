@@ -1,70 +1,179 @@
-# Locked In — A Student Command Center
+# 🔒 Locked In
 
-A unified dashboard that pulls everything a UCSD student juggles — Gmail, Google Calendar, Canvas assignments, and WebReg class schedule — into a single screen, then lets you push your class schedule straight into Google Calendar with one click.
+> A unified student command center for UCSD — Canvas, WebReg, Gmail, and Google Calendar in one screen.
 
-Built on top of the [Browser Use](https://browser-use.com) cloud agent, so it works on real authenticated sessions (UCSD SSO + Duo, Gmail, Calendar) without needing fragile official APIs or OAuth setup per student.
+<p align="center">
+  <img alt="React" src="https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white">
+  <img alt="Vite" src="https://img.shields.io/badge/Vite-5-646CFF?logo=vite&logoColor=white">
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white">
+  <img alt="Tailwind" src="https://img.shields.io/badge/Tailwind-3-38B2AC?logo=tailwind-css&logoColor=white">
+  <img alt="Browser Use" src="https://img.shields.io/badge/Browser_Use-v3-000000">
+  <img alt="License" src="https://img.shields.io/badge/license-MIT-blue">
+</p>
 
-## Stack
+---
 
-- React 18 + Vite + TypeScript
-- Tailwind CSS + shadcn/ui (semantic HSL design tokens)
-- Browser Use Cloud API v3 for all browser automation
-- Recharts for the unified workload timeline
-- 100% client-side — credentials live in `localStorage`, no backend
+## 📖 Overview
 
-## Features
+**Locked In** pulls everything a UCSD student juggles — **Gmail**, **Google Calendar**, **Canvas assignments**, and **WebReg class schedule** — into a single dashboard, then lets you push your class schedule straight into Google Calendar with one click.
 
-### 1. Canvas Assignments (`browserUseCanvas.ts`)
-Logs into `canvas.ucsd.edu` via UCSD SSO, waits for the student to approve Duo on their phone, explicitly clicks **"No, other people use this device"**, then hits the Canvas planner + courses APIs from inside the browser session. Returns a clean, sorted list of upcoming assignments / quizzes / discussions for the next **1, 7, or 14 days**.
+Built on top of the [Browser Use](https://browser-use.com) cloud agent, so it works on real authenticated sessions (UCSD SSO + Duo, Gmail, Calendar) **without** needing fragile official APIs or per-student OAuth setup.
 
-**Why it's useful:** Canvas's own UI buries due dates across multiple courses. Students see one chronological feed of what's actually due.
+## 🧱 Stack
 
-### 2. WebReg Schedule (`browserUseWebReg.ts`, `WebRegSchedule.tsx`)
-Same SSO + Duo dance, but against `act.ucsd.edu/webreg2`. Selects the term (default `SP26`), then calls the internal `get-class` endpoint to pull the student's enrolled lectures, discussions, labs, and finals. Renders them as a weekly grid color-coded by course.
+| Layer | Tech |
+|---|---|
+| Framework | React 18 + Vite + TypeScript |
+| Styling | Tailwind CSS + shadcn/ui (semantic HSL tokens) |
+| Charts | Recharts |
+| Automation | Browser Use Cloud API v3 |
+| Persistence | `localStorage` (no backend) |
 
-**Why it's useful:** WebReg is famously ugly and slow. This gives students a Google-Calendar-style view of their week in seconds.
+---
 
-### 3. Push Schedule → Google Calendar (`browserUsePushToCalendar.ts`)
-Takes the parsed WebReg schedule and instructs a Browser Use agent to create one **weekly recurring** event per meeting (LE/DI/LA/SE) and one **one-time** event per FI/MI exam in the user's Google Calendar. Each course gets its own consistent color, recurrence stops the day before finals, and exams land on their actual date.
+## ✨ Features
 
-**Why it's useful:** Manually entering 4–6 classes × multiple meeting types into Google Calendar takes 20+ minutes per quarter. This is one click.
+### 1. Canvas Assignments
+> `src/lib/browserUseCanvas.ts`
 
-### 4. Calendar Events (`browserUseCalendar.ts`)
+Logs into `canvas.ucsd.edu` via UCSD SSO, waits for Duo approval on your phone, clicks **"No, other people use this device"**, then hits the Canvas planner + courses APIs from inside the live browser session. Returns a clean, sorted list of upcoming assignments / quizzes / discussions for the next **1, 7, or 14 days**.
+
+**Why:** Canvas's UI buries due dates across courses. Students get one chronological feed of what's actually due.
+
+### 2. WebReg Schedule
+> `src/lib/browserUseWebReg.ts` · `src/components/WebRegSchedule.tsx`
+
+Same SSO + Duo dance against `act.ucsd.edu/webreg2`. Selects the term (default `SP26`), then calls the internal `get-class` endpoint to pull enrolled lectures, discussions, labs, and finals. Renders them as a weekly grid color-coded by course.
+
+**Why:** WebReg is famously slow and ugly. This gives you a Google-Calendar-style view of your week in seconds.
+
+### 3. Push Schedule → Google Calendar
+> `src/lib/browserUsePushToCalendar.ts`
+
+Takes your parsed WebReg schedule and instructs an agent to create:
+- One **weekly recurring** event per meeting (LE / DI / LA / SE), stopping the day before finals
+- One **one-time** event per FI / MI exam on its actual date
+- A consistent color per course
+
+**Why:** Manually entering 4–6 classes × multiple meeting types takes 20+ minutes per quarter. This is one click.
+
+### 4. Calendar Events
+> `src/lib/browserUseCalendar.ts`
+
 Pulls all upcoming Google Calendar events for the connected account over the next **1, 7, or 14 days**.
 
-### 5. Gmail Triage (`browserUseChat.ts`, `EmailCard.tsx`, `ImportanceFunnel.tsx`)
-Reads the inbox and surfaces an importance-ranked, summarized view of recent emails — so students can clear the noise (newsletters, promo) from the signal (professors, financial aid, deadlines).
+### 5. Gmail Triage
+> `src/lib/browserUseChat.ts` · `src/components/EmailCard.tsx` · `src/components/ImportanceFunnel.tsx`
 
-### 6. Unified Workload Timeline (`TimelineChart.tsx`)
-Once both assignments and events are fetched, renders a single dot-plot over the next N days: assignments and events are color-coded so students can instantly see crunch days.
+Reads the inbox and surfaces an importance-ranked, summarized view of recent emails — clearing the noise (newsletters, promo) from the signal (professors, financial aid, deadlines).
 
-### 7. Gradescope (`browserUseGradescope.ts`)
+### 6. Unified Workload Timeline
+> `src/components/TimelineChart.tsx`
+
+Once both assignments and events are fetched, renders a single dot-plot over the next *N* days. Assignments and events are color-coded so you can instantly see crunch days.
+
+### 7. Gradescope
+> `src/lib/browserUseGradescope.ts`
+
 Pulls outstanding Gradescope assignments using the same agent pattern.
 
-## How the Browser Use integration works
+---
 
-Every data source follows the same pattern in `src/lib/browserUse*.ts`:
+## ⚙️ How the Browser Use integration works
 
-1. `POST /api/v3/sessions` with a precise, step-numbered task prompt (login → 2FA → click "No, other people use this device" → fetch via `fetch()` from the live tab → return raw JSON).
-2. Poll `GET /api/v3/sessions/:id` every 5s for up to 8–10 min, respecting an `AbortSignal` so the user can cancel.
-3. `parseOutput()` strips markdown fences, extracts the JSON array, and normalizes it into a typed shape (`CanvasAssignment`, `WebRegCourse`, `CalendarEvent`, …).
-4. `PUT /api/v3/sessions/:id/stop` to release the cloud session as soon as we have data.
+Every data source in `src/lib/browserUse*.ts` follows the same pattern:
 
-Credentials (Browser Use API key, Gmail address, UCSD SSO username/password) are entered once in the Setup panel and stored in `localStorage` — see `SettingsPanel.tsx`.
+```text
+1. POST /api/v3/sessions
+   └─ task = step-numbered prompt:
+      login → 2FA wait → click "No, other people use this device"
+      → fetch() from the live tab → return raw JSON
 
-## Design system
+2. Poll GET /api/v3/sessions/:id every 5s (max 8–10 min)
+   └─ respects AbortSignal so the user can cancel
 
-All colors are HSL semantic tokens defined in `src/index.css` and mapped in `tailwind.config.ts`. Components never hardcode colors — use `bg-primary`, `text-muted-foreground`, etc.
+3. parseOutput()
+   └─ strips markdown fences, extracts the JSON array,
+      normalizes into typed shapes (CanvasAssignment, WebRegCourse, …)
 
-## Setup
+4. PUT /api/v3/sessions/:id/stop
+   └─ release the cloud session as soon as data is in
+```
 
-1. Get a Browser Use API key at [cloud.browser-use.com/settings](https://cloud.browser-use.com/settings).
-2. Open the app, click the Setup gear, and enter:
-   - Gmail address (must be linked to your Browser Use Composio Google connection)
+Credentials (Browser Use API key, Gmail address, UCSD SSO username/password) are entered once in the Setup panel and stored in `localStorage` — see `src/components/SettingsPanel.tsx`.
+
+---
+
+## 🎨 Design System
+
+All colors are **HSL semantic tokens** defined in `src/index.css` and mapped in `tailwind.config.ts`. Components never hardcode colors — they use `bg-primary`, `text-muted-foreground`, etc. so light/dark themes stay consistent.
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js 18+ and `npm` / `bun`
+- A [Browser Use](https://cloud.browser-use.com/settings) API key
+- UCSD SSO credentials + a phone with Duo Mobile
+
+### Install & run
+
+```bash
+# 1. Clone
+git clone https://github.com/<you>/locked-in.git
+cd locked-in
+
+# 2. Install
+npm install
+
+# 3. Dev server
+npm run dev
+```
+
+### Configure
+
+1. Open the app and click the **⚙️ Setup** gear.
+2. Enter:
+   - Gmail address (linked to your Browser Use Composio Google connection)
    - Browser Use API key
    - UCSD SSO username + password
-3. Click any **Fetch** button. Approve Duo on your phone when it pings.
+3. Click any **Fetch** button. **Approve Duo on your phone** when it pings.
 
-## Why this matters for students
+---
 
-Students currently jump between 5+ tabs (Canvas, WebReg, Gmail, Calendar, Gradescope) and re-enter their schedule into Google Calendar by hand every quarter. This collapses all of that into one view, one login, one click — which is the actual difference between staying organized and falling behind.
+## 📂 Project Structure
+
+```
+src/
+├── components/        # UI components (shadcn + custom)
+│   ├── CanvasAssignments.tsx
+│   ├── WebRegSchedule.tsx
+│   ├── CalendarEvents.tsx
+│   ├── TimelineChart.tsx
+│   └── SettingsPanel.tsx
+├── lib/               # Browser Use integrations
+│   ├── browserUseCanvas.ts
+│   ├── browserUseWebReg.ts
+│   ├── browserUseCalendar.ts
+│   ├── browserUsePushToCalendar.ts
+│   ├── browserUseChat.ts
+│   └── browserUseGradescope.ts
+├── pages/
+│   └── Index.tsx      # Main dashboard
+└── index.css          # HSL design tokens
+```
+
+---
+
+## 💡 Why this matters
+
+Students currently jump between **5+ tabs** (Canvas, WebReg, Gmail, Calendar, Gradescope) and re-enter their schedule into Google Calendar by hand every quarter.
+
+Locked In collapses all of that into **one view, one login, one click** — the difference between staying organized and falling behind.
+
+---
+
+## 📜 License
+
+MIT — do whatever, just don't blame us if Duo locks you out.

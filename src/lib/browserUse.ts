@@ -1,17 +1,6 @@
 import type { Email } from "@/components/EmailCard";
 import { getSettings } from "@/components/SettingsPanel";
-
-const BASE_URL = "https://api.browser-use.com/api/v3";
-const TIMEOUT_MS = 8 * 60 * 1000;
-const POLL_INTERVAL = 5000;
-
-interface BrowserUseSession {
-  id: string;
-  status?: "created" | "idle" | "running" | "stopped" | "timed_out" | "error" | string;
-  output?: unknown;
-  isTaskSuccessful?: boolean | null;
-  lastStepSummary?: string | null;
-}
+import { runBrowserTask, isRecord } from "@/lib/browserUseCore";
 
 interface GmailMessage {
   sender: string;
@@ -29,80 +18,15 @@ export async function fetchEmails(signal?: AbortSignal, timeRange: "today" | "we
     throw new Error("Please configure your API key and email in Settings first.");
   }
 
-  const createRes = await fetch(`${BASE_URL}/sessions`, {
-    method: "POST",
-    headers: {
-      "X-Browser-Use-API-Key": apiKey,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      task: `Using composio connections, read only my emails from today and yesterday. Then, get my 5 most important unread emails (at ${email}) (if any) from today and yesterday and rank them by potential importance. Return ONLY a valid JSON array with objects having these fields: sender (string), subject (string), preview (first 1-2 sentences of the email body), time (string like "9:30 AM"), importance ("critical" | "high" | "medium"), category (string like "Security", "Work", "Finance", "Social", "Updates"). No markdown, no explanation, just the JSON array.`,
-    }),
+  const task = `Using composio connections, read only my emails from today and yesterday. Then, get my 5 most important unread emails (at ${email}) (if any) from today and yesterday and rank them by potential importance. Return ONLY a valid JSON array with objects having these fields: sender (string), subject (string), preview (first 1-2 sentences of the email body), time (string like "9:30 AM"), importance ("critical" | "high" | "medium"), category (string like "Security", "Work", "Finance", "Social", "Updates"). No markdown, no explanation, just the JSON array.`;
+
+  return runBrowserTask(task, apiKey, {
     signal,
+    timedOutMsg: "Browser Use timed out. Please check that your Gmail address and Browser Use API key are correct in Settings.",
+    timeoutMsg: "Request timed out after 8 minutes. Please check that your Gmail address and Browser Use API key are correct in Settings.",
+    emptyResult: [],
+    parseOutput: parseSessionOutput,
   });
-
-  if (!createRes.ok) {
-    const status = createRes.status;
-    if (status === 401 || status === 403) {
-      throw new Error("Invalid API key. Please check your Browser Use API key in Settings.");
-    }
-    if (status === 429) {
-      throw new Error("Rate limited by Browser Use. Please wait a moment and try again.");
-    }
-    throw new Error(`Failed to create session (HTTP ${status}). Please try again.`);
-  }
-
-  const session: BrowserUseSession = await createRes.json();
-  if (!session.id) {
-    throw new Error("Browser Use did not return a session ID. The service may be temporarily unavailable.");
-  }
-
-  const start = Date.now();
-
-  while (Date.now() - start < TIMEOUT_MS) {
-    signal?.throwIfAborted();
-    await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL));
-
-    const pollRes = await fetch(`${BASE_URL}/sessions/${session.id}`, {
-      headers: { "X-Browser-Use-API-Key": apiKey },
-      signal,
-    });
-
-    if (!pollRes.ok) {
-      throw new Error(`Failed to check session status (HTTP ${pollRes.status}). Please try again.`);
-    }
-
-    const result: BrowserUseSession = await pollRes.json();
-
-    if (result.status === "timed_out") {
-      throw new Error(
-        "Browser Use timed out. Please check that your Gmail address and Browser Use API key are correct in Settings.",
-      );
-    }
-
-    if (result.status === "error" || result.isTaskSuccessful === false) {
-      throw new Error(
-        result.lastStepSummary ||
-          "Browser Use could not complete the email fetch. Please verify your Gmail address and API key in Settings.",
-      );
-    }
-
-    if (hasOutput(result.output)) {
-      return parseSessionOutput(result.output);
-    }
-
-    if (result.status === "stopped") {
-      return [];
-    }
-  }
-
-  throw new Error(
-    "Request timed out after 8 minutes. Please check that your Gmail address and Browser Use API key are correct in Settings.",
-  );
-}
-
-function hasOutput(output: unknown): boolean {
-  return output !== null && output !== undefined && !(typeof output === "string" && output.trim() === "");
 }
 
 function parseSessionOutput(output: unknown): Email[] {
@@ -120,7 +44,7 @@ function parseSessionOutput(output: unknown): Email[] {
     );
   }
 
-  if (emails.length === 0 && hasOutput(output)) {
+  if (emails.length === 0) {
     console.warn("Browser Use returned output but no emails could be parsed:", output);
     throw new Error("Could not parse emails from the response. The format was unexpected — please try again.");
   }
@@ -253,8 +177,4 @@ function normalizeImportance(value: unknown): Email["importance"] {
 
 function toStringValue(value: unknown, fallback = ""): string {
   return typeof value === "string" ? value : fallback;
-}
-
-function isRecord(value: unknown): value is Record<string, any> {
-  return typeof value === "object" && value !== null;
 }
